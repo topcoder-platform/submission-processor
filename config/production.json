@@ -1,0 +1,5 @@
+{
+	"KAFKA_URL": "kafka://127.0.0.1:9092", // kafka brokers
+	"PARTITIONS": "0", // comma separated list of partitions ex: 0,1,2 - depending on partitions you have configured
+	"TOPIC": "submission" // topic name 
+}
