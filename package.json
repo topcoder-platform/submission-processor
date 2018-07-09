@@ -18,12 +18,14 @@
     "node-rest-client": "^3.1.0",
     "random-number": "0.0.9",
     "s3": "^4.4.0",
-    "standard": "^11.0.1",
     "uuid": "^3.3.0",
     "winston": "^3.0.0"
   },
   "engines": {
     "node": "~8",
     "npm": "~5"
+  },
+  "devDependencies": {
+    "standard": "^11.0.1"
   }
 }
