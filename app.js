@@ -127,7 +127,7 @@ function moveAndCreateReview (params, isClean, submissionId) {
             headers: { 'Content-Type': 'application/json' }
           }
 
-          client.post(config.get('SUBMISSION_ENPOINT'), args, function (data, response) {
+          client.post(config.get('SUBMISSION_ENDPOINT'), args, function (data, response) {
             logger.info('Successfully posted to Submission Endpoint')
           })
         }

@@ -1,10 +1,10 @@
 {
 	"KAFKA_URL": "kafka://127.0.0.1:9092", // kafka brokers
 	"PARTITIONS": "0", // comma separated list of partitions ex: 0,1,2 - depending on partitions you have configured
-	"TOPIC": "submission", // topic name 
+	"TOPIC": "submission", // topic name
 	"DMZ_STORAGE_AREA_BUCKET": "dmzstorgagebucketname", // DMZ bucket name
 	"CLEAN_SUBMISSION_BUCKET": "cleansubmission", // clean submission bucket name
 	"QUARANTINE_AREA_BUCKET": "quarantinesubmission", // quarantine submission bucket name
-	"SUBMISSION_ENPOINT": "https://tc-submission-api-dev.herokuapp.com/reviews", // submission endpoint for reviews
+	"SUBMISSION_ENDPOINT": "https://tc-submission-api-dev.herokuapp.com/reviews", // submission endpoint for reviews
 	"LOG_LEVEL" : "info" // we are only logging at error and info level in code and all logs go under /logs folder
 }

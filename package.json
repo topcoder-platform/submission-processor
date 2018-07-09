@@ -4,7 +4,8 @@
   "description": "The Event Processor for Topcoder Submission API",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "lint": "standard ."
   },
   "author": "",
   "license": "MIT",
@@ -20,5 +21,9 @@
     "standard": "^11.0.1",
     "uuid": "^3.3.0",
     "winston": "^3.0.0"
+  },
+  "engines": {
+    "node": "~8",
+    "npm": "~5"
   }
 }
