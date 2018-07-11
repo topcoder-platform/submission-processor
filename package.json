@@ -1,31 +1,36 @@
 {
-  "name": "processor",
+  "name": "tc-submission-api-event-processor",
   "version": "1.0.0",
-  "description": "The Event Processor for Topcoder Submission API",
-  "main": "app.js",
+  "description": "Topcoder Submission API - Event Processor",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node app.js",
-    "lint": "standard ."
+    "start": "node src/app.js",
+    "lint": "standard",
+    "lint-fix": "standard --fix",
+    "mock-review-api": "node test/mock-review-api.js"
   },
-  "author": "",
-  "license": "MIT",
+  "author": "TCSCODER",
+  "license": "none",
+  "devDependencies": {
+    "body-parser": "^1.18.3",
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "standard": "^11.0.1"
+  },
   "dependencies": {
-    "aws-sdk": "^2.264.1",
-    "config": "^1.30.0",
-    "download": "^7.0.0",
-    "joi": "^13.4.0",
-    "no-kafka": "^3.2.10",
-    "node-rest-client": "^3.1.0",
-    "random-number": "0.0.9",
-    "s3": "^4.4.0",
-    "uuid": "^3.3.0",
-    "winston": "^3.0.0"
+    "aws-sdk": "^2.271.1",
+    "axios": "^0.17.1",
+    "bluebird": "^3.5.1",
+    "co": "^4.6.0",
+    "config": "^1.21.0",
+    "get-parameter-names": "^0.3.0",
+    "joi": "^9.0.4",
+    "lodash": "^4.17.4",
+    "no-kafka": "^3.2.4",
+    "uuid": "^3.3.2",
+    "winston": "^2.2.0"
   },
   "engines": {
-    "node": "~8",
-    "npm": "~5"
-  },
-  "devDependencies": {
-    "standard": "^11.0.1"
+    "node": "8.x"
   }
 }

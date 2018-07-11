@@ -1,5 +1,0 @@
-{"message":"Wrong format of kafka-message received - will not process.","level":"error"}
-{"message":"Wrong format of kafka-message received - will not process. Error: ValidationError: child \"legacySubmissionId\" fails because [\"legacySubmissionId\" must be a string]","level":"error"}
-{"message":"Wrong format of kafka-message received - will not process. Error: ValidationError: child \"userId\" fails because [\"userId\" is required]","level":"error"}
-{"message":"Wrong format of kafka-message received - will not process. Error: ValidationError: child \"userId\" fails because [\"userId\" is required]","level":"error"}
-{"message":"Wrong format of kafka-message received - will not process. Error: ValidationError: child \"userId\" fails because [\"userId\" is required]","level":"error"}
