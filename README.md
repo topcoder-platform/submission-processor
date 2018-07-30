@@ -31,6 +31,8 @@ The following parameters can be set in config files or in env variables:
 Note that ACCESS_KEY_ID and SECRET_ACCESS_KEY are optional,
 if not provided, then they are loaded from shared credentials, see [official documentation](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html)
 
+Also note that there is a `/health` endpoint that checks for the health of the app. This sets up an expressjs server and listens on the environment variable `PORT`. It's not part of the configuration file and needs to be passed as an environment variable
+
 ## Local Kafka setup
 
 - `http://kafka.apache.org/quickstart` contains details to setup and manage Kafka server,
