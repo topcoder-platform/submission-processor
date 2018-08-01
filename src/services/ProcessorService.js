@@ -54,38 +54,41 @@ function * moveFile (sourceBucket, sourceKey, targetBucket, targetKey) {
 function * processMessage (message) {
   // check whether the submission file is at DMZ area
   let dmzS3Obj
+  let payload = message.payload
+  let filename = payload.isFileSubmission ? payload.filename : payload.id
+
   try {
-    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: message.filename })
+    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: filename })
     // the file is already in DMZ area
-    logger.info(`The file ${message.filename} is already in DMZ area.`)
+    logger.info(`The file ${filename} is already in DMZ area.`)
   } catch (e) {
     if (e.statusCode !== 404) {
       // unexpected error, rethrow it
       throw e
     }
     // the file is not in DMZ area, then copy it to DMZ area
-    logger.info(`The file ${message.filename} is not in DMZ area, copying it to DMZ area.`)
-    const fileURLResponse = yield axios.get(message.fileURL, { responseType: 'arraybuffer' })
-    yield s3p.uploadAsync({ Bucket: config.DMZ_BUCKET, Key: message.filename, Body: fileURLResponse.data })
-    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: message.filename })
+    logger.info(`The file ${filename} is not in DMZ area, copying it to DMZ area.`)
+    const fileURLResponse = yield axios.get(payload.url, { responseType: 'arraybuffer' })
+    yield s3p.uploadAsync({ Bucket: config.DMZ_BUCKET, Key: filename, Body: fileURLResponse.data })
+    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: filename })
   }
 
   // scan the file in DMZ
-  logger.info(`Scanning the file ${message.filename}.`)
+  logger.info(`Scanning the file ${filename}.`)
   const scanResult = yield FileScanService.scanFile(dmzS3Obj)
   if (scanResult) {
-    logger.info(`The file ${message.filename} is clean. Moving file to clean submission area.`)
-    yield moveFile(config.DMZ_BUCKET, message.filename, config.CLEAN_BUCKET, message.filename)
+    logger.info(`The file ${filename} is clean. Moving file to clean submission area.`)
+    yield moveFile(config.DMZ_BUCKET, filename, config.CLEAN_BUCKET, filename)
   } else {
-    logger.info(`The file ${message.filename} is dirty. Moving file to quarantine area.`)
-    yield moveFile(config.DMZ_BUCKET, message.filename, config.QUARANTINE_BUCKET, message.filename)
+    logger.info(`The file ${filename} is dirty. Moving file to quarantine area.`)
+    yield moveFile(config.DMZ_BUCKET, filename, config.QUARANTINE_BUCKET, filename)
   }
 
   logger.info('Creating review object.')
   yield createReview({
     score: scanResult ? 100 : 0,
     reviewerId: uuid(),
-    submissionId: `${message.submissionId || message.legacySubmissionId}`,
+    submissionId: payload.id,
     scorecardId: uuid(),
     typeId: uuid()
   })
@@ -93,15 +96,16 @@ function * processMessage (message) {
 
 processMessage.schema = {
   message: Joi.object().keys({
-    submissionId: Joi.string(),
-    challengeId: Joi.string(),
-    userId: Joi.string(),
-    submissionType: Joi.string(),
-    isFileSubmission: Joi.boolean(),
-    fileType: Joi.string(),
-    filename: Joi.string().required(),
-    fileURL: Joi.string().required(),
-    legacySubmissionId: Joi.string()
+    topic: Joi.string().required(),
+    originator: Joi.string().required(),
+    timestamp: Joi.date().required(),
+    'mime-type': Joi.string().required(),
+    payload: Joi.object().keys({
+      resource: Joi.string().valid('submission').required(),
+      id: Joi.string().required(),
+      url: Joi.string().uri().trim(),
+      isFileSubmission: Joi.boolean()
+    }).unknown(true).required()
   }).required()
 }
 
