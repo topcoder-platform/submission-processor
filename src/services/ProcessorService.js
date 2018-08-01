@@ -55,32 +55,33 @@ function * processMessage (message) {
   // check whether the submission file is at DMZ area
   let dmzS3Obj
   let payload = message.payload
+  let filename = payload.isFileSubmission ? payload.filename : payload.id
 
   try {
-    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: payload.filename })
+    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: filename })
     // the file is already in DMZ area
-    logger.info(`The file ${payload.filename} is already in DMZ area.`)
+    logger.info(`The file ${filename} is already in DMZ area.`)
   } catch (e) {
     if (e.statusCode !== 404) {
       // unexpected error, rethrow it
       throw e
     }
     // the file is not in DMZ area, then copy it to DMZ area
-    logger.info(`The file ${payload.filename} is not in DMZ area, copying it to DMZ area.`)
+    logger.info(`The file ${filename} is not in DMZ area, copying it to DMZ area.`)
     const fileURLResponse = yield axios.get(payload.url, { responseType: 'arraybuffer' })
-    yield s3p.uploadAsync({ Bucket: config.DMZ_BUCKET, Key: payload.filename, Body: fileURLResponse.data })
-    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: payload.filename })
+    yield s3p.uploadAsync({ Bucket: config.DMZ_BUCKET, Key: filename, Body: fileURLResponse.data })
+    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: filename })
   }
 
   // scan the file in DMZ
-  logger.info(`Scanning the file ${payload.filename}.`)
+  logger.info(`Scanning the file ${filename}.`)
   const scanResult = yield FileScanService.scanFile(dmzS3Obj)
   if (scanResult) {
-    logger.info(`The file ${payload.filename} is clean. Moving file to clean submission area.`)
-    yield moveFile(config.DMZ_BUCKET, payload.filename, config.CLEAN_BUCKET, payload.filename)
+    logger.info(`The file ${filename} is clean. Moving file to clean submission area.`)
+    yield moveFile(config.DMZ_BUCKET, filename, config.CLEAN_BUCKET, filename)
   } else {
-    logger.info(`The file ${payload.filename} is dirty. Moving file to quarantine area.`)
-    yield moveFile(config.DMZ_BUCKET, payload.filename, config.QUARANTINE_BUCKET, payload.filename)
+    logger.info(`The file ${filename} is dirty. Moving file to quarantine area.`)
+    yield moveFile(config.DMZ_BUCKET, filename, config.QUARANTINE_BUCKET, filename)
   }
 
   logger.info('Creating review object.')
