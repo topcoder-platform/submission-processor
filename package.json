@@ -11,11 +11,14 @@
     "test": "mocha test/unit/*.test.js --require test/unit/prepare.js --exit",
     "e2e": "mocha test/e2e/*.test.js --exit",
     "cov": "nyc --reporter=html --reporter=text mocha test/unit/*.test.js --require test/unit/prepare.js --exit",
-    "cov-e2e": "nyc --reporter=html --reporter=text mocha test/e2e/*.test.js --exit"
+    "cov-e2e": "nyc --reporter=html --reporter=text mocha test/e2e/*.test.js --exit",
+    "docker-start": "concurrently npm:start npm:mock-review-api"
   },
   "author": "TCSCODER",
   "devDependencies": {
-    "aws-sdk-mock": "^4.0.0",
+    "chai": "^4.1.2",
+    "chai-http": "^4.0.0",
+    "concurrently": "^3.6.1",
     "mocha": "^5.2.0",
     "mocha-prepare": "^0.1.0",
     "nock": "^9.4.4",
@@ -23,6 +26,7 @@
     "standard": "^11.0.1"
   },
   "dependencies": {
+    "amazon-s3-uri": "0.0.3",
     "aws-sdk": "^2.271.1",
     "axios": "^0.17.1",
     "bluebird": "^3.5.1",
@@ -42,5 +46,10 @@
   },
   "engines": {
     "node": "8.x"
+  },
+  "standard": {
+    "env": [
+      "mocha"
+    ]
   }
 }

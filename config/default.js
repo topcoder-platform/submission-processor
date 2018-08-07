@@ -8,7 +8,7 @@ module.exports = {
   KAFKA_CLIENT_CERT: process.env.KAFKA_CLIENT_CERT,
   KAFKA_CLIENT_CERT_KEY: process.env.KAFKA_CLIENT_CERT_KEY,
   KAFKA_SUBMISSION_TOPIC: process.env.KAFKA_SUBMISSION_TOPIC || 'submission.notification.create',
- 
+
   // AWS related parameters
   aws: {
     REGION: process.env.REGION || 'us-east-1',

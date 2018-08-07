@@ -2,12 +2,11 @@
  * Contains generic helper methods
  */
 
-const _ = require('lodash')
 const axios = require('axios')
 const bluebird = require('bluebird')
 const config = require('config')
-const url = require('url')
 const AWS = require('aws-sdk')
+const AmazonS3URI = require('amazon-s3-uri')
 
 AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
@@ -30,8 +29,8 @@ function * postToReviewAPI (reqBody) {
 function * downloadFile (fileURL) {
   let downloadedFile
   if (/.*amazonaws.*/.test(fileURL)) {
-    const parts = url.parse(fileURL).pathname.split('/')
-    downloadedFile = yield s3p.getObjectAsync({ Bucket: parts[parts.length-2], Key: parts[parts.length-1] })
+    const { bucket, key } = AmazonS3URI(fileURL)
+    downloadedFile = yield s3p.getObjectAsync({ Bucket: bucket, Key: key })
     return downloadedFile.Body
   } else {
     downloadedFile = yield axios.get(fileURL, { responseType: 'arraybuffer' })
@@ -50,7 +49,6 @@ function * moveFile (sourceBucket, sourceKey, targetBucket, targetKey) {
   yield s3p.copyObjectAsync({ Bucket: targetBucket, CopySource: `/${sourceBucket}/${sourceKey}`, Key: targetKey })
   yield s3p.deleteObjectAsync({ Bucket: sourceBucket, Key: sourceKey })
 }
-
 
 module.exports = {
   postToReviewAPI,

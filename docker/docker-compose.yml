@@ -6,5 +6,5 @@ services:
       dockerfile: docker/Dockerfile
     env_file:
       - api.env
-    command: npm start
+    command: npm run docker-start
     network_mode: "host"

@@ -6,7 +6,7 @@ const bluebird = require('bluebird')
 const config = require('config')
 const Joi = require('joi')
 const axios = require('axios')
-const formData = require('form-data')
+const FormData = require('form-data')
 const uuid = require('uuid/v4')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
@@ -23,7 +23,7 @@ const s3p = bluebird.promisifyAll(s3)
 function * processMessage (message) {
   // check whether the submission file is at DMZ area
   let dmzS3Obj
-  const fileName = message.payload.id + "." + message.payload.fileType
+  const fileName = message.payload.id + '.' + message.payload.fileType
   try {
     dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName })
     // the file is already in DMZ area
@@ -42,7 +42,7 @@ function * processMessage (message) {
 
   // scan the file in DMZ
   logger.info(`Scanning the file ${fileName}.`)
-  const form = new formData()
+  const form = new FormData()
   form.append('file', dmzS3Obj.Body, { filename: fileName })
   const scanResult = yield axios.post(config.ANTIVIRUS_API_URL, form, { headers: form.getHeaders() })
   if (!scanResult.data.infected) {
