@@ -27,8 +27,14 @@ jobs:
       - restore_cache: *restore_cache_settings_for_build
       - run: chmod +x build.sh
       - run: ./build.sh DEV
-      - save_cache: *save_cache_settings          
-      #add deploy master script here
+      - save_cache: *save_cache_settings  
+      - deploy:
+          command: |
+            git clone --branch master https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            echo 'Running MasterScript'
+            cp ./../buildscript/master_deply_v4.2.sh .
+            ./master_deply_v4.2.sh -d ECS -e DEV -t $CIRCLE_SHA1 -s submission-processor          
+            #add deploy master script here
        
   # Build & Deploy against production backend
   "build-prod":
