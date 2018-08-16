@@ -3,9 +3,8 @@ FROM node:8.11.3
 
 # Copy the current directory into the Docker image
 
-RUN ls -la
-WORKDIR /opt/app/
-COPY .. .
+WORKDIR /opt/app
+COPY . .
 # Set working directory for future use
 
 
