@@ -2,10 +2,11 @@
 FROM node:8.11.3
 
 # Copy the current directory into the Docker image
-COPY . /submission-processor
-
+WORKDIR /opt/app/
+RUN ls -la
+COPY . .
 # Set working directory for future use
-WORKDIR /submission-processor
+
 
 # Install the dependencies from package.json
 RUN npm install

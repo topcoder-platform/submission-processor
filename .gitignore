@@ -1,5 +1,6 @@
 .idea
 node_modules
+test-build.sh
 *.log
 .DS_Store
 .env
