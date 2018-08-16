@@ -6,7 +6,6 @@ AWS_REGION=$(eval "echo \$${ENV}_AWS_REGION")
 
 # Builds Docker image of the app.
 TAG=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/submission-processor:$CIRCLE_SHA1
-cd docker
 docker build -t $TAG .
 
 # Copies "node_modules" from the created image, if necessary for caching.
