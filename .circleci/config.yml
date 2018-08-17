@@ -8,6 +8,7 @@ install_dependency: &install_dependency
             apk add --no-cache bash
             apk add --no-cache jq py-pip sudo
             sudo pip install awscli --upgrade 
+            RUN apt-get install -y curl
 restore_cache_settings_for_build: &restore_cache_settings_for_build
   key: docker-node-modules-lsp-{{ checksum "package-lock.json" }}
 
