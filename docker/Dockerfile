@@ -10,3 +10,4 @@ WORKDIR /submission-processor
 
 # Install the dependencies from package.json
 RUN npm install
+CMD npm start
