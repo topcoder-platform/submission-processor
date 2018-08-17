@@ -1,7 +1,7 @@
 version: '3'
 services:
   submission-processor:
-    image: submissions-processor:latest
+    image: submission-processor:latest
     build:
       context: ../
       dockerfile: docker/Dockerfile

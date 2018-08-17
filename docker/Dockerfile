@@ -3,9 +3,9 @@ FROM node:8.11.3
 
 # Copy the current directory into the Docker image
 RUN apt-get install -y curl
-COPY . /submissions-processor
+COPY . /submission-processor
 # Set working directory for future use
-WORKDIR /submissions-processor
+WORKDIR /submission-processor
 
 
 # Install the dependencies from package.json
