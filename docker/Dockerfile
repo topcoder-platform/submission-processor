@@ -7,5 +7,6 @@ COPY . /submission-processor
 # Set working directory for future use
 WORKDIR /submission-processor
 
+
 # Install the dependencies from package.json
 RUN npm install
