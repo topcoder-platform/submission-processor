@@ -6,3 +6,4 @@ test-build.sh
 .env
 coverage/
 .nyc_output/
+api.env
