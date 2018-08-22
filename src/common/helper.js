@@ -2,6 +2,7 @@
  * Contains generic helper methods
  */
 
+const _ = require('lodash')
 const axios = require('axios')
 const bluebird = require('bluebird')
 const config = require('config')
@@ -11,6 +12,7 @@ const AmazonS3URI = require('amazon-s3-uri')
 AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
 const s3p = bluebird.promisifyAll(s3)
+const m2mAuth = require('tc-core-library-js').auth.m2m
 
 /**
  * Function to POST to Review API
@@ -18,7 +20,10 @@ const s3p = bluebird.promisifyAll(s3)
  * @returns {Promise}
  */
 function * postToReviewAPI (reqBody) {
-  yield axios.post(config.REVIEW_API_URL, reqBody)
+  const m2m = m2mAuth(_.pick(config, ['AUTH0_URL', 'AUTH0_AUDIENCE', 'TOKEN_CACHE_TIME']))
+  const token = yield m2m.getMachineToken(config.AUTH0_CLIENT_ID, config.AUTH0_CLIENT_SECRET)
+
+  yield axios.post(config.REVIEW_API_URL, reqBody, { headers: { 'Authorization': `Bearer ${token}` } })
 }
 
 /**

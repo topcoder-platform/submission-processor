@@ -15,6 +15,7 @@ const AWS = require('aws-sdk')
 AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
 const s3p = bluebird.promisifyAll(s3)
+const REVIEW_TYPE_AVSCAN = 'f28b2725-ef90-4495-af59-ceb2bd98fc10'
 
 /**
  * Process message.
@@ -53,13 +54,13 @@ function * processMessage (message) {
     yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, config.get('aws.QUARANTINE_BUCKET'), fileName)
   }
 
-  logger.info('Create review using Review API')
+  logger.info('Create review using Review API') //  CWD-- TODO: need to update the URL of the submission here
   yield helper.postToReviewAPI({
     score: scanResult.data.infected ? 0 : 100,
-    reviewerId: uuid(),
-    submissionId: fileName,
-    scorecardId: uuid(),
-    typeId: uuid()
+    reviewerId: uuid(), //  CWD-- TODO: should fix this to a specific Id
+    submissionId: message.payload.id,
+    scorecardId: uuid(), //  CWD-- TODO: should fix this to a specific Id
+    typeId: REVIEW_TYPE_AVSCAN
   })
 }
 
