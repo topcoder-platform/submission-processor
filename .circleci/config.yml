@@ -1,13 +1,13 @@
 version: 2
 defaults: &defaults
     docker:
-      - image: docker:17.11.0-ce-git        
+      - image: docker:18.06-git        
 install_dependency: &install_dependency
           name: Installation of build and deployment dependencies.
           command: |
             apk add --no-cache bash
             apk add --no-cache jq py-pip sudo
-            sudo pip install awscli --upgrade 
+            sudo pip install awscli --upgrade
             sudo pip install docker-compose
 restore_cache_settings_for_build: &restore_cache_settings_for_build
   key: docker-node-modules-lsp-{{ checksum "package-lock.json" }}
@@ -15,7 +15,7 @@ restore_cache_settings_for_build: &restore_cache_settings_for_build
 save_cache_settings: &save_cache_settings
   key: docker-node-modules-lsp-{{ checksum "package-lock.json" }}
   paths:
-    - node_modules           
+    - node_modules
 
 jobs:
   # Build & Deploy against development backend
@@ -28,15 +28,15 @@ jobs:
       - restore_cache: *restore_cache_settings_for_build
       - run: chmod +x build.sh
       - run: ./build.sh DEV
-      - save_cache: *save_cache_settings  
+      - save_cache: *save_cache_settings
       - deploy:
           name: Running MasterScript.
           command: |
             git clone --branch master https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
             cp ./../buildscript/master_deply_v4.2.sh .
-            ./master_deply_v4.2.sh -d ECS -e DEV -t $CIRCLE_SHA1 -s submission-processor          
+            ./master_deply_v4.2.sh -d ECS -e DEV -t $CIRCLE_SHA1 -s submission-processor
             #add deploy master script here
-       
+
   # Build & Deploy against production backend
   "build-prod":
     <<: *defaults
@@ -47,8 +47,8 @@ jobs:
       - restore_cache: *restore_cache_settings_for_build
       - restore_cache: *restore_cache_settings_for_build
       - run: ./build.sh PROD
-      - save_cache: *save_cache_settings        
-       
+      - save_cache: *save_cache_settings
+
 workflows:
   version: 2
   build:
@@ -58,5 +58,5 @@ workflows:
           filters:
             branches:
               only:
-                - dev-circleci 
+                - dev-circleci
                 - develop
