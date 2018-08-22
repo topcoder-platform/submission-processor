@@ -53,7 +53,7 @@ function * processMessage (message) {
     yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, config.get('aws.QUARANTINE_BUCKET'), fileName)
   }
 
-  logger.info('Create review using Review API')
+  logger.info('Create review using Review API') //  CWD-- TODO: need to update the URL of the submission here
   yield helper.postToReviewAPI({
     score: scanResult.data.infected ? 0 : 100,
     reviewerId: uuid(),
