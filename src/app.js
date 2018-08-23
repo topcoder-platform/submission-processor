@@ -9,6 +9,7 @@ const Kafka = require('no-kafka')
 const co = require('co')
 const ProcessorService = require('./services/ProcessorService')
 const healthcheck = require('topcoder-healthcheck-dropin')
+const _ = require('lodash')
 
 // create consumer
 const options = { connectionString: config.KAFKA_URL }
@@ -57,6 +58,7 @@ consumer
   // consume configured topic
   .then(() => {
     healthcheck.init([check])
-    consumer.subscribe(config.KAFKA_SUBMISSION_TOPIC, { time: Kafka.LATEST_OFFSET }, dataHandler)
+    const topics = config.KAFKA_TOPICS
+    _.each(topics, (tp) => consumer.subscribe(tp, { time: Kafka.LATEST_OFFSET }, dataHandler))
   })
   .catch((err) => logger.error(err))

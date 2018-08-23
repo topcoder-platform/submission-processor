@@ -19,7 +19,7 @@ The following parameters can be set in config files or in env variables:
 - KAFKA_CLIENT_CERT_KEY: Kafka connection private key, optional;
     if not provided, then SSL connection is not used, direct insecure connection is used;
     if provided, it can be either path to private key file or private key content
-- KAFKA_SUBMISSION_TOPIC: the Kafka topic to consume submission messages
+- KAFKA_TOPICS: the Kafka topic(s) to consume submission messages
 - ACCESS_KEY_ID: the AWS access key id
 - SECRET_ACCESS_KEY: the AWS secret access key
 - REGION: the AWS region
@@ -146,14 +146,14 @@ npm run cov-e2e
 
 - start kafka server, start mock review api, setup 3 AWS S3 buckets and update corresponding config, start processor app, start Anti virus service or configure Remote Anti virus service
 - use the above kafka-console-producer to write messages to `submission.notification.create` topic, one message per line:
- 
+
 ```
 { "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89d5-192a3aa22774", "url":"https://www.dropbox.com/s/31idvhiz9l7v35k/EICAR_submission.zip?dl=1", "fileType": "zip", "isFileSubmission":false } }
 
 { "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89a5-192a3aa23423", "url":"https://drive.google.com/file/d/16kkvI-itLYaH8IuVDrLsRL94t-HK1w19/view?usp=sharing", "fileType": "zip", "isFileSubmission":false } }
 
 ```
-  
+
   similarly add more messages, the files will be moved to clean or quarantine areas depending on the result from Anti virus API
 - go to AWS console S3 service, check the 3 buckets contents
 - check the mock review api console, it should say getting some review data
