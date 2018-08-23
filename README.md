@@ -142,7 +142,6 @@ To run integration tests with coverage report
 npm run cov-e2e
 ```
 
-
 ## Verification
 
 - start kafka server, start mock review api, setup 3 AWS S3 buckets and update corresponding config, start processor app, start Anti virus service or configure Remote Anti virus service
