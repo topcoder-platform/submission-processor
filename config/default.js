@@ -7,7 +7,7 @@ module.exports = {
   KAFKA_URL: process.env.KAFKA_URL || 'localhost:9092',
   KAFKA_CLIENT_CERT: process.env.KAFKA_CLIENT_CERT,
   KAFKA_CLIENT_CERT_KEY: process.env.KAFKA_CLIENT_CERT_KEY,
-  KAFKA_SUBMISSION_TOPIC: process.env.KAFKA_SUBMISSION_TOPIC || 'submission.notification.create',
+  KAFKA_TOPICS: (process.env.KAFKA_TOPICS && process.env.KAFKA_TOPICS.split(',')) || ['submission.notification.create'],
 
   // AWS related parameters
   aws: {
