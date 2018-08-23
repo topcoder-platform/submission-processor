@@ -85,7 +85,7 @@ processMessage.schema = {
       resource: Joi.alternatives().try(Joi.string().valid('submission'), Joi.string().valid('review')).required(),
       id: Joi.string().required(),
       url: Joi.string().uri().trim(),
-      fileType: Joi.string().required(),
+      fileType: Joi.string(),
       isFileSubmission: Joi.boolean()
     }).unknown(true).required()
   }).required()
