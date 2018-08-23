@@ -16,6 +16,7 @@ AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
 const s3p = bluebird.promisifyAll(s3)
 const REVIEW_TYPE_AVSCAN = 'f28b2725-ef90-4495-af59-ceb2bd98fc10'
+const REVIEW_SCORECARDID = '30001850'; // CWD-- TODO: make config or dynamicaly driven
 
 /**
  * Process message.
@@ -46,21 +47,24 @@ function * processMessage (message) {
   const form = new FormData()
   form.append('file', dmzS3Obj.Body, { filename: fileName })
   const scanResult = yield axios.post(config.ANTIVIRUS_API_URL, form, { headers: form.getHeaders() })
+  let destinationBucket = config.get('aws.CLEAN_BUCKET')
   if (!scanResult.data.infected) {
     logger.info(`The file ${fileName} is clean. Moving file to clean submission area.`)
-    yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, config.get('aws.CLEAN_BUCKET'), fileName)
   } else {
     logger.info(`The file ${fileName} is infected. Moving file to quarantine area.`)
-    yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, config.get('aws.QUARANTINE_BUCKET'), fileName)
+    destinationBucket = config.get('aws.QUARANTINE_BUCKET')
   }
 
+  const movedS3Obj = yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, destinationBucket, fileName)
+  logger.debug(`moved file: ${JSON.stringify(movedS3Obj)}`)
   logger.info('Create review using Review API') //  CWD-- TODO: need to update the URL of the submission here
   yield helper.postToReviewAPI({
     score: scanResult.data.infected ? 0 : 100,
     reviewerId: uuid(), //  CWD-- TODO: should fix this to a specific Id
     submissionId: message.payload.id,
-    scorecardId: uuid(), //  CWD-- TODO: should fix this to a specific Id
+    scoreCardId: REVIEW_SCORECARDID,
     typeId: REVIEW_TYPE_AVSCAN
+//    url: movedS3Obj
   })
 }
 
