@@ -16,13 +16,18 @@ AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
 const s3p = bluebird.promisifyAll(s3)
 const REVIEW_TYPE_AVSCAN = 'f28b2725-ef90-4495-af59-ceb2bd98fc10'
-const REVIEW_SCORECARDID = '30001850'; // CWD-- TODO: make config or dynamicaly driven
+const REVIEW_SCORECARDID = '30001850' // CWD-- TODO: make config or dynamicaly driven
 
 /**
  * Process message.
  * @param {Object} message the message
  */
 function * processMessage (message) {
+  if (message.payload.resource !== 'submission') {
+    logger.info(`ignoring messages of for resource type: ${message.resource}`)
+    return false
+  }
+
   // check whether the submission file is at DMZ area
   let dmzS3Obj
   const fileName = message.payload.id + '.' + message.payload.fileType
@@ -66,6 +71,8 @@ function * processMessage (message) {
     typeId: REVIEW_TYPE_AVSCAN
 //    url: movedS3Obj
   })
+
+  return true
 }
 
 processMessage.schema = {
@@ -75,7 +82,7 @@ processMessage.schema = {
     timestamp: Joi.date().required(),
     'mime-type': Joi.string().required(),
     payload: Joi.object().keys({
-      resource: Joi.string().valid('submission').required(),
+      resource: Joi.alternatives().try(Joi.string().valid('submission'), Joi.string().valid('review')).required(),
       id: Joi.string().required(),
       url: Joi.string().uri().trim(),
       fileType: Joi.string().required(),
