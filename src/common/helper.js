@@ -13,17 +13,30 @@ AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
 const s3p = bluebird.promisifyAll(s3)
 const m2mAuth = require('tc-core-library-js').auth.m2m
+const m2m = m2mAuth(_.pick(config, ['AUTH0_URL', 'AUTH0_AUDIENCE', 'TOKEN_CACHE_TIME']))
 
-/**
- * Function to POST to Review API
- * @param{Object} reqBody Body of the request to be Posted
+/* Function to get M2M token
  * @returns {Promise}
  */
-function * postToReviewAPI (reqBody) {
-  const m2m = m2mAuth(_.pick(config, ['AUTH0_URL', 'AUTH0_AUDIENCE', 'TOKEN_CACHE_TIME']))
-  const token = yield m2m.getMachineToken(config.AUTH0_CLIENT_ID, config.AUTH0_CLIENT_SECRET)
+function * getM2Mtoken () {
+  return yield m2m.getMachineToken(config.AUTH0_CLIENT_ID, config.AUTH0_CLIENT_SECRET)
+}
 
-  yield axios.post(config.REVIEW_API_URL, reqBody, { headers: { 'Authorization': `Bearer ${token}` } })
+/**
+ * Function to send request to Submission API
+ * @param{String} reqType Type of the request POST / PATCH
+ * @param(String) path Complete path of the Submission API URL
+ * @param{Object} reqBody Body of the request
+ * @returns {Promise}
+ */
+function * reqToSubmissionAPI (reqType, path, reqBody) {
+  // Token necessary to send request to Submission API
+  const token = yield getM2Mtoken()
+  if (reqType === 'POST') {
+    yield axios.post(path, reqBody, { headers: { 'Authorization': `Bearer ${token}` } })
+  } else if (reqType === 'PATCH') {
+    yield axios.patch(path, reqBody, { headers: { 'Authorization': `Bearer ${token}` } })
+  }
 }
 
 /**
@@ -56,7 +69,7 @@ function * moveFile (sourceBucket, sourceKey, targetBucket, targetKey) {
 }
 
 module.exports = {
-  postToReviewAPI,
+  reqToSubmissionAPI,
   downloadFile,
   moveFile
 }

@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "lint": "standard",
     "lint:fix": "standard --fix",
-    "mock-review-api": "node mock-review-api/api.js",
+    "mock-submission-api": "node mock-submission-api/api.js",
     "test": "mocha test/unit/*.test.js --require test/unit/prepare.js --exit",
     "e2e": "mocha test/e2e/*.test.js --exit",
     "cov": "nyc --reporter=html --reporter=text mocha test/unit/*.test.js --require test/unit/prepare.js --exit",

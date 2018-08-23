@@ -5,18 +5,26 @@
 // During the test the env variable is set to test
 process.env.NODE_ENV = 'test'
 
-const config = require('config')
 const nock = require('nock')
 const prepare = require('mocha-prepare')
-const url = require('url')
 
 prepare(function (done) {
   // called before loading of test cases
-  // Mock Review API
-  const reviewAPI = url.parse(config.REVIEW_API_URL)
-  nock(/localhost/, { allowUnmocked: true })
+  // Mock Submission API
+  nock(/localhost|.com/, { allowUnmocked: true })
     .persist()
-    .post(reviewAPI.path)
+    .filteringPath(function (path) {
+      if (path.indexOf('reviews') > -1) {
+        return 'valid'
+      } else if (path.indexOf('submissions') > -1) {
+        return 'valid'
+      }
+      return path
+    })
+    .post('valid')
+    .query(true)
+    .reply(200)
+    .patch('valid')
     .query(true)
     .reply(200)
   done()

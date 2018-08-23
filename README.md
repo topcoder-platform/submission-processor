@@ -26,7 +26,7 @@ The following parameters can be set in config files or in env variables:
 - DMZ_BUCKET: the DMZ bucket
 - CLEAN_BUCKET: the clean bucket
 - QUARANTINE_BUCKET: quarantine bucket
-- REVIEW_API_URL: the review API URL
+- SUBMISSION_API_URL: Submission API URL
 - ANTIVIRUS_API_URL: Antivirus API URL
 
 Note that ACCESS_KEY_ID and SECRET_ACCESS_KEY are optional,
@@ -72,9 +72,8 @@ Also note that there is a `/health` endpoint that checks for the health of the a
 - install dependencies `npm i`
 - run code lint check `npm run lint`, running `npm run lint:fix` can fix some lint errors if any
 - start app `npm start`
-- use another terminal to start mock review api `npm run mock-review-api`
-  the mock review api is running at `http://localhost:5000`
-- **You can also run the application and mock review API together by executing the command `npm run docker-start`**
+- use another terminal to start mock submission api `npm run mock-submission-api`
+  the mock submission api is running at `http://localhost:3010/api/v5`
 
 - Anti virus API configured using `ANTIVIRUS_API_URL` should be up and running for the application to work properly.
 
@@ -102,7 +101,7 @@ docker-compose up
 
 Ideally, Unit tests should use mocks for all external interactions. In AWS S3 mocks available, there is no option available to return different files based on some conditions, Also for Anti Virus API, there is no identifier to differentiate between good file and infected file to return mock responses.
 
-Hence for unit tests, S3 and Anti virus API should be real and Review API will be mocked.
+Hence for unit tests, S3 and Anti virus API should be real and Submission API will be mocked.
 
 Tests uses separate S3 buckets which need to be configured using the environment variables
 
@@ -144,7 +143,7 @@ npm run cov-e2e
 
 ## Verification
 
-- start kafka server, start mock review api, setup 3 AWS S3 buckets and update corresponding config, start processor app, start Anti virus service or configure Remote Anti virus service
+- start kafka server, start mock submission api, setup 3 AWS S3 buckets and update corresponding config, start processor app, start Anti virus service or configure Remote Anti virus service
 - use the above kafka-console-producer to write messages to `submission.notification.create` topic, one message per line:
 
 ```
@@ -156,5 +155,5 @@ npm run cov-e2e
 
   similarly add more messages, the files will be moved to clean or quarantine areas depending on the result from Anti virus API
 - go to AWS console S3 service, check the 3 buckets contents
-- check the mock review api console, it should say getting some review data
+- check the mock submission api console, it should say Mock Submission API got some data
 

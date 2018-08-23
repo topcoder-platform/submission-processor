@@ -17,7 +17,7 @@ module.exports = {
     QUARANTINE_BUCKET: process.env.QUARANTINE_BUCKET
   },
 
-  REVIEW_API_URL: process.env.REVIEW_API_URL || 'http://localhost:5000/reviews',
+  SUBMISSION_API_URL: process.env.SUBMISSION_API_URL || 'http://localhost:3010/api/v5',
   ANTIVIRUS_API_URL: process.env.ANTIVIRUS_API_URL || 'http://localhost:3000/api/v1/scan',
 
   AUTH0_URL: process.env.AUTH0_URL, // Auth0 credentials for Submission Service

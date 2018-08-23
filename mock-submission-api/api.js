@@ -7,14 +7,20 @@ const bodyParser = require('body-parser')
 const logger = require('../src/common/logger')
 
 const app = express()
-app.set('port', process.env.MOCK_REVIEW_API_PORT || 5000)
+app.set('port', process.env.MOCK_SUBMISSION_API_PORT || 3010)
 
 app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
-app.post('/reviews', (req, res) => {
-  logger.info('Mock review API got data:')
+app.post('/api/v5/reviews', (req, res) => {
+  logger.info('Mock Submission API got data:')
+  logger.info(JSON.stringify(req.body, null, 4))
+  res.status(200).end()
+})
+
+app.patch('/api/v5/submissions/:submissionId', (req, res) => {
+  logger.info('Mock Submission API got data:')
   logger.info(JSON.stringify(req.body, null, 4))
   res.status(200).end()
 })
