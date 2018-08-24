@@ -6,6 +6,7 @@ const _ = require('lodash')
 const axios = require('axios')
 const bluebird = require('bluebird')
 const config = require('config')
+const logger = require('./logger')
 const AWS = require('aws-sdk')
 const AmazonS3URI = require('amazon-s3-uri')
 
@@ -48,9 +49,11 @@ function * downloadFile (fileURL) {
   let downloadedFile
   if (/.*amazonaws.*/.test(fileURL)) {
     const { bucket, key } = AmazonS3URI(fileURL)
+    logger.info(`downloadFile(): file is on S3 ${bucket} / ${key}`)
     downloadedFile = yield s3p.getObjectAsync({ Bucket: bucket, Key: key })
     return downloadedFile.Body
   } else {
+    logger.info(`downloadFile(): file is (hopefully) a public URL at ${fileURL}`)
     downloadedFile = yield axios.get(fileURL, { responseType: 'arraybuffer' })
     return downloadedFile.data
   }
