@@ -48,6 +48,13 @@ jobs:
       - restore_cache: *restore_cache_settings_for_build
       - run: ./build.sh PROD
       - save_cache: *save_cache_settings
+      - deploy:
+          name: Running MasterScript.
+          command: |
+            git clone --branch master https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            cp ./../buildscript/master_deply_v4.2.sh .
+            ./master_deply_v4.2.sh -d ECS -e PROD -t $CIRCLE_SHA1 -s submission-processor
+            #add deploy master script here
 
 workflows:
   version: 2
@@ -60,3 +67,8 @@ workflows:
               only:
                 - dev-circleci
                 - develop
+      - "build-prod":
+          filters:
+            branches:
+              only:
+                - master          
