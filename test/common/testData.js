@@ -40,7 +40,7 @@ const s3Submission = {
   payload: {
     resource: 'submission',
     id: uuid(), // Below URL is from public S3 bucket for testing
-    url: 'https://s3.amazonaws.com/tc-testing-submissions/good_submission.zip',
+    url: 'https://s3.amazonaws.com/topcoder-dev-submissions-tests/good_submission.zip',
     fileType: 'zip',
     isFileSubmission: false
   }
@@ -54,15 +54,31 @@ const ignoredSubmission = {
   payload: {
     resource: 'review',
     id: uuid(), // Below URL is from public S3 bucket for testing
-    url: 'https://s3.amazonaws.com/tc-testing-submissions/good_submission.zip',
+    url: 'https://s3.amazonaws.com/topcoder-dev-submissions-tests/good_submission.zip',
     fileType: 'zip',
     isFileSubmission: false
   }
 }
 
+const largeSubmission = {
+  topic: 'submission.notification.create',
+  originator: 'submission-api',
+  timestamp: '2018-02-03T00:00:00',
+  'mime-type': 'application/json',
+  payload: {
+    resource: 'submission',
+    id: uuid(), // Below URL is from public google drive for testing
+    url: 'https://s3.amazonaws.com/topcoder-dev-submissions-tests/medium.zip',
+    fileType: 'zip',
+    isFileSubmission: false
+  }
+}
+
+
 module.exports = {
   goodSubmission,
   infectedSubmission,
   s3Submission,
-  ignoredSubmission
+  ignoredSubmission,
+  largeSubmission
 }

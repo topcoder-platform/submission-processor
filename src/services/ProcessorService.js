@@ -51,7 +51,7 @@ function * processMessage (message) {
   logger.info(`Scanning the file ${fileName}.`)
   const form = new FormData()
   form.append('file', dmzS3Obj.Body, { filename: fileName })
-  const scanResult = yield axios.post(config.ANTIVIRUS_API_URL, form, { headers: form.getHeaders() })
+  const scanResult = yield axios.post(config.ANTIVIRUS_API_URL, form, { maxContentLength: config.MAXFILESIZE, headers: form.getHeaders() })
   let destinationBucket = config.get('aws.CLEAN_BUCKET')
   if (!scanResult.data.infected) {
     logger.info(`The file ${fileName} is clean. Moving file to clean submission area.`)

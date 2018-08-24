@@ -10,7 +10,7 @@ const ProcessorService = require('../../src/services/ProcessorService')
 const config = require('config')
 const co = require('co')
 const testHelper = require('../common/testHelper')
-const { infectedSubmission, goodSubmission, s3Submission, ignoredSubmission } = require('../common/testData')
+const { infectedSubmission, goodSubmission, s3Submission, ignoredSubmission, largeSubmission } = require('../common/testData')
 
 describe('Processor Service Unit tests', () => {
   it('Infected submission should get moved to quarantine area', (done) => {
@@ -54,4 +54,20 @@ describe('Processor Service Unit tests', () => {
       .then(() => done())
       .catch(done)
   }).timeout(30000)
+
+
+  it('Large submission should get moved to the clean area', (done) => {
+    co(function * () {
+      console.log('processing large file')
+      const result = yield ProcessorService.processMessage(largeSubmission)
+      console.log('processing large file result', result)
+      result.should.equal(true)
+      const fileName = `${largeSubmission.payload.id}.zip`
+      console.log('checking for large file ', fileName)
+      yield testHelper.checkFileExistence(config.get('aws.CLEAN_BUCKET'), fileName)
+      result.should.equal(true)
+    })
+      .then(() => done())
+      .catch(done)
+  }).timeout(500000)
 })
