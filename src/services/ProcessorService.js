@@ -6,102 +6,92 @@ const bluebird = require('bluebird')
 const config = require('config')
 const Joi = require('joi')
 const axios = require('axios')
+const FormData = require('form-data')
 const uuid = require('uuid/v4')
 const logger = require('../common/logger')
+const helper = require('../common/helper')
 const AWS = require('aws-sdk')
-const FileScanService = require('./FileScanService')
 
-const options = {
-  s3: '2006-03-01' // s3 API version
-}
-if (config.ACCESS_KEY_ID) {
-  options.accessKeyId = config.ACCESS_KEY_ID
-}
-if (config.SECRET_ACCESS_KEY) {
-  options.secretAccessKey = config.SECRET_ACCESS_KEY
-}
-if (config.REGION) {
-  options.region = config.REGION
-}
-AWS.config.update(options)
+AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
 const s3p = bluebird.promisifyAll(s3)
-
-/**
- * Create review.
- * @param {Object} data the review data
- */
-function * createReview (data) {
-  yield axios.post(config.REVIEW_API_URL, data)
-}
-
-/**
- * Move file from one AWS S3 bucket to another bucket.
- * @param {String} sourceBucket the source bucket
- * @param {String} sourceKey the source key
- * @param {String} targetBucket the target bucket
- * @param {String} targetKey the target key
- */
-function * moveFile (sourceBucket, sourceKey, targetBucket, targetKey) {
-  yield s3p.copyObjectAsync({ Bucket: targetBucket, CopySource: `/${sourceBucket}/${sourceKey}`, Key: targetKey })
-  yield s3p.deleteObjectAsync({ Bucket: sourceBucket, Key: sourceKey })
-}
+const REVIEW_TYPE_AVSCAN = 'f28b2725-ef90-4495-af59-ceb2bd98fc10'
+const REVIEW_SCORECARDID = '30001850' // CWD-- TODO: make config or dynamicaly driven
 
 /**
  * Process message.
  * @param {Object} message the message
  */
 function * processMessage (message) {
+  if (message.payload.resource !== 'submission') {
+    logger.info(`ignoring messages of for resource type: ${message.resource}`)
+    return false
+  }
+
   // check whether the submission file is at DMZ area
   let dmzS3Obj
+  const fileName = message.payload.id + '.' + message.payload.fileType
   try {
-    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: message.filename })
+    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName })
     // the file is already in DMZ area
-    logger.info(`The file ${message.filename} is already in DMZ area.`)
+    logger.info(`The file ${fileName} is already in DMZ area.`)
   } catch (e) {
     if (e.statusCode !== 404) {
       // unexpected error, rethrow it
       throw e
     }
     // the file is not in DMZ area, then copy it to DMZ area
-    logger.info(`The file ${message.filename} is not in DMZ area, copying it to DMZ area.`)
-    const fileURLResponse = yield axios.get(message.fileURL, { responseType: 'arraybuffer' })
-    yield s3p.uploadAsync({ Bucket: config.DMZ_BUCKET, Key: message.filename, Body: fileURLResponse.data })
-    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.DMZ_BUCKET, Key: message.filename })
+    logger.info(`The file ${fileName} is not in DMZ area, copying it to DMZ area.`)
+    const downloadedFile = yield helper.downloadFile(message.payload.url)
+    yield s3p.uploadAsync({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName, Body: downloadedFile })
+    dmzS3Obj = yield s3p.getObjectAsync({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName })
   }
 
   // scan the file in DMZ
-  logger.info(`Scanning the file ${message.filename}.`)
-  const scanResult = yield FileScanService.scanFile(dmzS3Obj)
-  if (scanResult) {
-    logger.info(`The file ${message.filename} is clean. Moving file to clean submission area.`)
-    yield moveFile(config.DMZ_BUCKET, message.filename, config.CLEAN_BUCKET, message.filename)
+  logger.info(`Scanning the file ${fileName}.`)
+  const form = new FormData()
+  form.append('file', dmzS3Obj.Body, { filename: fileName })
+  const scanResult = yield axios.post(config.ANTIVIRUS_API_URL, form, { maxContentLength: config.MAXFILESIZE, headers: form.getHeaders() })
+  let destinationBucket = config.get('aws.CLEAN_BUCKET')
+  if (!scanResult.data.infected) {
+    logger.info(`The file ${fileName} is clean. Moving file to clean submission area.`)
   } else {
-    logger.info(`The file ${message.filename} is dirty. Moving file to quarantine area.`)
-    yield moveFile(config.DMZ_BUCKET, message.filename, config.QUARANTINE_BUCKET, message.filename)
+    logger.info(`The file ${fileName} is infected. Moving file to quarantine area.`)
+    destinationBucket = config.get('aws.QUARANTINE_BUCKET')
   }
 
-  logger.info('Creating review object.')
-  yield createReview({
-    score: scanResult ? 100 : 0,
-    reviewerId: uuid(),
-    submissionId: `${message.submissionId || message.legacySubmissionId}`,
-    scorecardId: uuid(),
-    typeId: uuid()
+  yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, destinationBucket, fileName)
+  const movedS3Obj = `https://s3.amazonaws.com/${destinationBucket}/${fileName}`
+  logger.debug(`moved file: ${JSON.stringify(movedS3Obj)}`)
+  logger.info('Create review using Submission API') //  CWD-- TODO: need to update the URL of the submission here
+  yield helper.reqToSubmissionAPI('POST', `${config.SUBMISSION_API_URL}/reviews`, {
+    score: scanResult.data.infected ? 0 : 100,
+    reviewerId: uuid(), //  CWD-- TODO: should fix this to a specific Id
+    submissionId: message.payload.id,
+    scoreCardId: REVIEW_SCORECARDID,
+    typeId: REVIEW_TYPE_AVSCAN
+    //    url: movedS3Obj
   })
+  logger.info('Update Submission final location using Submission API')
+  yield helper.reqToSubmissionAPI('PATCH', `${config.SUBMISSION_API_URL}/submissions/${message.payload.id}`,
+    { url: movedS3Obj })
+
+  return true
 }
 
 processMessage.schema = {
   message: Joi.object().keys({
-    submissionId: Joi.string(),
-    challengeId: Joi.string(),
-    userId: Joi.string(),
-    submissionType: Joi.string(),
-    isFileSubmission: Joi.boolean(),
-    fileType: Joi.string(),
-    filename: Joi.string().required(),
-    fileURL: Joi.string().required(),
-    legacySubmissionId: Joi.string()
+    topic: Joi.string().required(),
+    originator: Joi.string().required(),
+    timestamp: Joi.date().required(),
+    'mime-type': Joi.string().required(),
+    payload: Joi.object().keys({
+      resource: Joi.alternatives().try(Joi.string().valid('submission'), Joi.string().valid('review')).required(),
+      id: Joi.string().required(),
+      url: Joi.string().uri().trim(),
+      fileType: Joi.string(),
+      isFileSubmission: Joi.boolean()
+    }).unknown(true).required()
   }).required()
 }
 

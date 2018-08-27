@@ -1,4 +1,6 @@
-# Topcoder Submission API - Event Processor
+# Submission Processor - Create Submission Event only
+
+This processor only deals with the event when a new submission is created. It carries out additional processing of the uploaded submission
 
 ## Dependencies
 
@@ -17,17 +19,20 @@ The following parameters can be set in config files or in env variables:
 - KAFKA_CLIENT_CERT_KEY: Kafka connection private key, optional;
     if not provided, then SSL connection is not used, direct insecure connection is used;
     if provided, it can be either path to private key file or private key content
-- KAFKA_SUBMISSION_TOPIC: the Kafka topic to consume submission messages
+- KAFKA_TOPICS: the Kafka topic(s) to consume submission messages
 - ACCESS_KEY_ID: the AWS access key id
 - SECRET_ACCESS_KEY: the AWS secret access key
 - REGION: the AWS region
 - DMZ_BUCKET: the DMZ bucket
 - CLEAN_BUCKET: the clean bucket
 - QUARANTINE_BUCKET: quarantine bucket
-- REVIEW_API_URL: the review API URL
+- SUBMISSION_API_URL: Submission API URL
+- ANTIVIRUS_API_URL: Antivirus API URL
 
 Note that ACCESS_KEY_ID and SECRET_ACCESS_KEY are optional,
 if not provided, then they are loaded from shared credentials, see [official documentation](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html)
+
+Also note that there is a `/health` endpoint that checks for the health of the app. This sets up an expressjs server and listens on the environment variable `PORT`. It's not part of the configuration file and needs to be passed as an environment variable
 
 ## Local Kafka setup
 
@@ -42,38 +47,113 @@ if not provided, then they are loaded from shared credentials, see [official doc
   `bin/kafka-server-start.sh config/server.properties`
 - note that the zookeeper server is at localhost:2181, and Kafka server is at localhost:9092
 - use another terminal, go to same directory, create a topic:
-  `bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic submissions`
+  `bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic submission.notification.create`
 - verify that the topic is created:
   `bin/kafka-topics.sh --list --zookeeper localhost:2181`,
   it should list out the created topics
 - run the producer and then type a few messages into the console to send to the server:
-  `bin/kafka-console-producer.sh --broker-list localhost:9092 --topic submissions`
+  `bin/kafka-console-producer.sh --broker-list localhost:9092 --topic submission.notification.create`
   in the console, write some messages, one per line:
-  `{ "submissionId": "123", "challengeId": 1111, "userId": 456, "submissionType": "dev", "isFileSubmission": true, "fileType": "png", "filename": "file1.png", "fileURL": "https://thumb.ibb.co/jkefXT/t.png", "legacySubmissionId": 999 }`
-  `{ "challengeId": 1111, "userId": 456, "submissionType": "dev", "isFileSubmission": true, "fileType": "png", "filename": "file2.png", "fileURL": "https://thumb.ibb.co/jkefXT/t.png", "legacySubmissionId": 999 }`
+
+```
+{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89d5-192a3aa22774", "url":"https://www.dropbox.com/s/31idvhiz9l7v35k/EICAR_submission.zip?dl=1", "fileType": "zip", "isFileSubmission":false } }
+
+{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89a5-192a3aa23423", "url":"https://drive.google.com/file/d/16kkvI-itLYaH8IuVDrLsRL94t-HK1w19/view?usp=sharing", "fileType": "zip", "isFileSubmission":false } }
+
+```
+
   we can keep this producer so that we may send more messages later for verification
 - optionally, use another terminal, go to same directory, start a consumer to view the messages:
-  `bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic submissions --from-beginning`
+  `bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic submission.notification.create --from-beginning`
 
 ## Local deployment
 
 - setup Kafka as above
 - install dependencies `npm i`
-- run code lint check `npm run lint`, running `npm run lint-fix` can fix some lint errors if any
+- run code lint check `npm run lint`, running `npm run lint:fix` can fix some lint errors if any
 - start app `npm start`
-- use another terminal to start mock review api `npm run mock-review-api`
-  the mock review api is running at `http://localhost:5000`
+- use another terminal to start mock submission api `npm run mock-submission-api`
+  the mock submission api is running at `http://localhost:3010/api/v5`
+
+- Anti virus API configured using `ANTIVIRUS_API_URL` should be up and running for the application to work properly.
+
+- You can run the Anti virus service locally using the [av-scannner-service](https://github.com/topcoder-platform/av-scanner-service)
+
+## Local Deployment with Docker
+
+To run the Submission ES Processor using docker, follow the below steps
+
+1. Navigate to the directory `docker`
+
+2. Rename the file `sample.api.env` to `api.env`
+
+3. Set the required AWS credentials in the file `api.env`
+
+4. Once that is done, run the following command
+
+```
+docker-compose up
+```
+
+5. When you are running the application for the first time, It will take some time initially to download the image and install the dependencies
+
+## Unit tests and Integration tests
+
+Ideally, Unit tests should use mocks for all external interactions. In AWS S3 mocks available, there is no option available to return different files based on some conditions, Also for Anti Virus API, there is no identifier to differentiate between good file and infected file to return mock responses.
+
+Hence for unit tests, S3 and Anti virus API should be real and Submission API will be mocked.
+
+Tests uses separate S3 buckets which need to be configured using the environment variables
+
+```
+DMZ_BUCKET_TEST
+CLEAN_BUCKET_TEST
+QUARANTINE_BUCKET_TEST
+```
+
+Refer to `config/test.js` for more details. Variables not present in `config/test.js` will flow from `config/default.js`
+
+#### Running unit tests and coverage
+
+To run unit tests alone
+
+```
+npm run test
+```
+
+To run unit tests with coverage report
+
+```
+npm run cov
+```
+
+#### Running integration tests and coverage
+
+To run integration tests alone
+
+```
+npm run e2e
+```
+
+To run integration tests with coverage report
+
+```
+npm run cov-e2e
+```
 
 ## Verification
 
-- start kafka server, start mock review api, setup 3 AWS S3 buckets and update corresponding config, start processor app
-- use the above kafka-console-producer to write messages to `submissions` topic, one message per line:
-  `{ "submissionId": "123", "challengeId": 1111, "userId": 456, "submissionType": "dev", "isFileSubmission": true, "fileType": "png", "filename": "file1.png", "fileURL": "https://thumb.ibb.co/jkefXT/t.png", "legacySubmissionId": 999 }`
+- start kafka server, start mock submission api, setup 3 AWS S3 buckets and update corresponding config, start processor app, start Anti virus service or configure Remote Anti virus service
+- use the above kafka-console-producer to write messages to `submission.notification.create` topic, one message per line:
 
-  `{ "challengeId": 1111, "userId": 456, "submissionType": "dev", "isFileSubmission": true, "fileType": "png", "filename": "file2.png", "fileURL": "https://thumb.ibb.co/jkefXT/t.png", "legacySubmissionId": 999 }`
+```
+{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89d5-192a3aa22774", "url":"https://www.dropbox.com/s/31idvhiz9l7v35k/EICAR_submission.zip?dl=1", "fileType": "zip", "isFileSubmission":false } }
 
-  `{ "challengeId": 1111, "userId": 456, "submissionType": "dev", "isFileSubmission": true, "fileType": "png", "filename": "t.png", "fileURL": "https://thumb.ibb.co/jkefXT/t.png", "legacySubmissionId": 999 }`
+{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89a5-192a3aa23423", "url":"https://drive.google.com/file/d/16kkvI-itLYaH8IuVDrLsRL94t-HK1w19/view?usp=sharing", "fileType": "zip", "isFileSubmission":false } }
 
-  similarly add more messages, the files will be moved to clean or quarantine areas randomly
+```
+
+  similarly add more messages, the files will be moved to clean or quarantine areas depending on the result from Anti virus API
 - go to AWS console S3 service, check the 3 buckets contents
-- check the mock review api console, it should say getting some review data
+- check the mock submission api console, it should say Mock Submission API got some data
+

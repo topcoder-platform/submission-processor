@@ -1,0 +1,10 @@
+version: '3'
+services:
+  submission-processor:
+    image: submission-processor:latest
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    env_file:
+      - api.env
+    network_mode: "host"
