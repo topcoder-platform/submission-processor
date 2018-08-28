@@ -74,7 +74,6 @@ const largeSubmission = {
   }
 }
 
-
 module.exports = {
   goodSubmission,
   infectedSubmission,
