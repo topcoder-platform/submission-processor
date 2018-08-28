@@ -16,6 +16,9 @@ const s3p = bluebird.promisifyAll(s3)
 const m2mAuth = require('tc-core-library-js').auth.m2m
 const m2m = m2mAuth(_.pick(config, ['AUTH0_URL', 'AUTH0_AUDIENCE', 'TOKEN_CACHE_TIME']))
 
+// Variable to cache reviewTypes from Submission API
+const reviewTypes = {}
+
 /* Function to get M2M token
  * @returns {Promise}
  */
@@ -37,6 +40,27 @@ function * reqToSubmissionAPI (reqType, path, reqBody) {
     yield axios.post(path, reqBody, { headers: { 'Authorization': `Bearer ${token}` } })
   } else if (reqType === 'PATCH') {
     yield axios.patch(path, reqBody, { headers: { 'Authorization': `Bearer ${token}` } })
+  } else if (reqType === 'GET') {
+    return yield axios.get(path, { headers: { 'Authorization': `Bearer ${token}` } })
+  }
+}
+
+/*
+ * Function to get reviewTypeId from Name
+ * @param{String} reviewTypeName Name of the reviewType
+ * @returns{String} reviewTypeId
+ */
+function * getreviewTypeId(reviewTypeName) {
+  if(reviewTypes[reviewTypeName]) {
+    return reviewTypes[reviewTypeName]
+  } else {
+    const response = yield reqToSubmissionAPI('GET', 
+      `${config.SUBMISSION_API_URL}/reviewTypes?name=${reviewTypeName}`, {})
+    if(response.data.length !== 0) {
+      reviewTypes[reviewTypeName] = response.data[0].id
+      return reviewTypes[reviewTypeName]
+    }
+    return null
   }
 }
 
@@ -73,6 +97,7 @@ function * moveFile (sourceBucket, sourceKey, targetBucket, targetKey) {
 
 module.exports = {
   reqToSubmissionAPI,
+  getreviewTypeId,
   downloadFile,
   moveFile
 }
