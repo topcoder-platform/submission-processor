@@ -15,7 +15,6 @@ const AWS = require('aws-sdk')
 AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
 const s3p = bluebird.promisifyAll(s3)
-const REVIEW_TYPE_AVSCAN = 'f28b2725-ef90-4495-af59-ceb2bd98fc10'
 const REVIEW_SCORECARDID = '30001850' // CWD-- TODO: make config or dynamicaly driven
 
 /**
@@ -69,7 +68,7 @@ function * processMessage (message) {
     reviewerId: uuid(), //  CWD-- TODO: should fix this to a specific Id
     submissionId: message.payload.id,
     scoreCardId: REVIEW_SCORECARDID,
-    typeId: REVIEW_TYPE_AVSCAN
+    typeId: yield helper.getreviewTypeId('AV Scan')
     //    url: movedS3Obj
   })
   logger.info('Update Submission final location using Submission API')
