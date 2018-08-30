@@ -63,18 +63,18 @@ function * processMessage (message) {
   yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, destinationBucket, fileName)
   const movedS3Obj = `https://s3.amazonaws.com/${destinationBucket}/${fileName}`
   logger.debug(`moved file: ${JSON.stringify(movedS3Obj)}`)
-  logger.info('Create review using Submission API') //  CWD-- TODO: need to update the URL of the submission here
+  logger.info('Update Submission final location using Submission API')
+  yield helper.reqToSubmissionAPI('PATCH', `${config.SUBMISSION_API_URL}/submissions/${message.payload.id}`,
+    { url: movedS3Obj })
+
+  logger.info('Create review using Submission API')
   yield helper.reqToSubmissionAPI('POST', `${config.SUBMISSION_API_URL}/reviews`, {
     score: scanResult.data.infected ? 0 : 100,
     reviewerId: uuid(), //  CWD-- TODO: should fix this to a specific Id
     submissionId: message.payload.id,
     scoreCardId: REVIEW_SCORECARDID,
     typeId: REVIEW_TYPE_AVSCAN
-    //    url: movedS3Obj
   })
-  logger.info('Update Submission final location using Submission API')
-  yield helper.reqToSubmissionAPI('PATCH', `${config.SUBMISSION_API_URL}/submissions/${message.payload.id}`,
-    { url: movedS3Obj })
 
   return true
 }
