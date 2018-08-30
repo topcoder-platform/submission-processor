@@ -55,7 +55,6 @@ describe('Processor Service Unit tests', () => {
       .catch(done)
   }).timeout(30000)
 
-
   it('Large submission should get moved to the clean area', (done) => {
     co(function * () {
       console.log('processing large file')
