@@ -44,11 +44,12 @@ function * processCreate (message) {
     yield s3p.uploadAsync({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName, Body: downloadedFile })
   }
 
+  const dmzFileURL = `https://s3.amazonaws.com/${config.get('aws.DMZ_BUCKET')}/${fileName}`
   // Send request to Scan the file
   logger.info(`Sending request to scan the file ${fileName}.`)
   const reqBody = {
     submissionId: message.payload.id,
-    url: message.payload.url,
+    url: dmzFileURL,
     fileName: fileName
   }
   yield axios.post(config.ANTIVIRUS_API_URL, reqBody, { maxContentLength: config.MAXFILESIZE })
