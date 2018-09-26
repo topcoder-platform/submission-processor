@@ -1,3 +1,4 @@
+
 /**
  * The configuration file.
  */
@@ -8,7 +9,8 @@ module.exports = {
   KAFKA_URL: process.env.KAFKA_URL || 'localhost:9092',
   KAFKA_CLIENT_CERT: process.env.KAFKA_CLIENT_CERT,
   KAFKA_CLIENT_CERT_KEY: process.env.KAFKA_CLIENT_CERT_KEY,
-  KAFKA_TOPICS: (process.env.KAFKA_TOPICS && process.env.KAFKA_TOPICS.split(',')) || ['submission.notification.create'],
+  SUBMISSION_CREATE_TOPIC: process.env.SUBMISSION_CREATE_TOPIC || 'submission.notification.create',
+  AVSCAN_TOPIC: process.env.AVSCAN_TOPIC || 'avscan.action.scan',
 
   // AWS related parameters
   aws: {
@@ -19,7 +21,7 @@ module.exports = {
   },
 
   SUBMISSION_API_URL: process.env.SUBMISSION_API_URL || 'http://localhost:3010/api/v5',
-  ANTIVIRUS_API_URL: process.env.ANTIVIRUS_API_URL || 'http://localhost:3000/api/v1/scan',
+  ANTIVIRUS_API_URL: process.env.ANTIVIRUS_API_URL || 'http://localhost:3010/v5/batchScan',
 
   AUTH0_URL: process.env.AUTH0_URL, // Auth0 credentials for Submission Service
   AUTH0_AUDIENCE: process.env.AUTH0_AUDIENCE || 'https://www.topcoder.com',
