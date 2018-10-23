@@ -2,6 +2,7 @@
 
 This processor only deals with the event when a new submission is created. It carries out additional processing of the uploaded submission
 
+
 ## Dependencies
 
 - [nodejs](https://nodejs.org/en/) (v8+)
@@ -19,7 +20,8 @@ The following parameters can be set in config files or in env variables:
 - KAFKA_CLIENT_CERT_KEY: Kafka connection private key, optional;
     if not provided, then SSL connection is not used, direct insecure connection is used;
     if provided, it can be either path to private key file or private key content
-- KAFKA_TOPICS: the Kafka topic(s) to consume submission messages
+- SUBMISSION_CREATE_TOPIC: Kafka topic related to Submission creation, default value is 'submission.notification.create'
+- AVSCAN_TOPIC: Kafka topic related to AV Scan, default value is 'avscan.action.scan'
 - ACCESS_KEY_ID: the AWS access key id
 - SECRET_ACCESS_KEY: the AWS secret access key
 - REGION: the AWS region
@@ -56,9 +58,9 @@ Also note that there is a `/health` endpoint that checks for the health of the a
   in the console, write some messages, one per line:
 
 ```
-{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89d5-192a3aa22774", "url":"https://www.dropbox.com/s/31idvhiz9l7v35k/EICAR_submission.zip?dl=1", "fileType": "zip", "isFileSubmission":false } }
+{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"a12a4180-65aa-42ec-a945-5fd21dec0502", "url":"https://www.dropbox.com/s/31idvhiz9l7v35k/EICAR_submission.zip?dl=1", "fileType": "zip", "isFileSubmission":false } }
 
-{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89a5-192a3aa23423", "url":"https://drive.google.com/file/d/16kkvI-itLYaH8IuVDrLsRL94t-HK1w19/view?usp=sharing", "fileType": "zip", "isFileSubmission":false } }
+{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"a12a4180-65aa-42ec-a945-5fd21dec0503", "url":"https://drive.google.com/file/d/16kkvI-itLYaH8IuVDrLsRL94t-HK1w19/view?usp=sharing", "fileType": "zip", "isFileSubmission":false } }
 
 ```
 
@@ -144,12 +146,15 @@ npm run cov-e2e
 ## Verification
 
 - start kafka server, start mock submission api, setup 3 AWS S3 buckets and update corresponding config, start processor app, start Anti virus service or configure Remote Anti virus service
+
+- Note: `submission-scanner` app need to be up and running as well to verify the working of `submission-processor`
+
 - use the above kafka-console-producer to write messages to `submission.notification.create` topic, one message per line:
 
 ```
-{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89d5-192a3aa22774", "url":"https://www.dropbox.com/s/31idvhiz9l7v35k/EICAR_submission.zip?dl=1", "fileType": "zip", "isFileSubmission":false } }
+{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"a12a4180-65aa-42ec-a945-5fd21dec0502", "url":"https://www.dropbox.com/s/31idvhiz9l7v35k/EICAR_submission.zip?dl=1", "fileType": "zip", "isFileSubmission":false } }
 
-{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"29da63f2-d0f8-4b8f-89a5-192a3aa23423", "url":"https://drive.google.com/file/d/16kkvI-itLYaH8IuVDrLsRL94t-HK1w19/view?usp=sharing", "fileType": "zip", "isFileSubmission":false } }
+{ "topic":"submission.notification.create", "originator":"submission-api", "timestamp":"2018-08-06T15:46:05.575Z", "mime-type":"application/json", "payload":{ "resource":"submission", "id":"a12a4180-65aa-42ec-a945-5fd21dec0503", "url":"https://drive.google.com/file/d/16kkvI-itLYaH8IuVDrLsRL94t-HK1w19/view?usp=sharing", "fileType": "zip", "isFileSubmission":false } }
 
 ```
 

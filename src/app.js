@@ -24,6 +24,7 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
   logger.info(`Handle Kafka event message; Topic: ${topic}; Partition: ${partition}; Offset: ${
     m.offset}; Message: ${message}.`)
   let messageJSON
+
   try {
     messageJSON = JSON.parse(message)
   } catch (e) {
@@ -32,8 +33,31 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
     // ignore the message
     return
   }
+
+  if (messageJSON.topic !== topic) {
+    logger.error(`The message topic ${messageJSON.topic} doesn't match the Kafka topic ${topic}.`)
+    // ignore the message
+    return
+  }
+
+  // Process only messages with scanned status
+  if (messageJSON.topic === config.AVSCAN_TOPIC && messageJSON.payload.status !== 'scanned') {
+    logger.debug(`Ignoring message in topic ${messageJSON.topic} with status ${messageJSON.payload.status}`)
+    // ignore the message
+    return
+  }
+
   return co(function * () {
-    yield ProcessorService.processMessage(messageJSON)
+    switch (topic) {
+      case config.SUBMISSION_CREATE_TOPIC:
+        yield ProcessorService.processCreate(messageJSON)
+        break
+      case config.AVSCAN_TOPIC:
+        yield ProcessorService.processScan(messageJSON)
+        break
+      default:
+        throw new Error(`Invalid topic: ${topic}`)
+    }
   })
     // commit offset
     .then(() => consumer.commitOffset({ topic, partition, offset: m.offset }))
@@ -58,7 +82,7 @@ consumer
   // consume configured topic
   .then(() => {
     healthcheck.init([check])
-    const topics = config.KAFKA_TOPICS
+    const topics = [config.SUBMISSION_CREATE_TOPIC, config.AVSCAN_TOPIC]
     _.each(topics, (tp) => consumer.subscribe(tp, { time: Kafka.LATEST_OFFSET }, dataHandler))
   })
   .catch((err) => logger.error(err))
