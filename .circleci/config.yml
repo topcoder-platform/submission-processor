@@ -32,7 +32,7 @@ jobs:
       - deploy:
           name: Running MasterScript.
           command: |
-            git clone --branch master https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            git clone --branch v1.1 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
             cp ./../buildscript/master_deploy.sh .
             ./master_deploy.sh -d ECS -e DEV -t $CIRCLE_SHA1 -s submission-processor
             #add deploy master script here
@@ -51,7 +51,7 @@ jobs:
       - deploy:
           name: Running MasterScript.
           command: |
-            git clone --branch master https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+            git clone --branch v1.1 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
             cp ./../buildscript/master_deploy.sh .
             ./master_deploy.sh -d ECS -e PROD -t $CIRCLE_SHA1 -s submission-processor
             #add deploy master script here
