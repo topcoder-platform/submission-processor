@@ -6,6 +6,7 @@ module.exports = {
   LOG_LEVEL: process.env.LOG_LEVEL || 'debug',
   MAXFILESIZE: process.env.MAXFILESIZE || 4294967296,
 
+  KAFKA_GROUP_ID: process.env.KAFKA_GROUP_ID || 'submission-processor-group',
   KAFKA_URL: process.env.KAFKA_URL || 'localhost:9092',
   KAFKA_CLIENT_CERT: process.env.KAFKA_CLIENT_CERT,
   KAFKA_CLIENT_CERT_KEY: process.env.KAFKA_CLIENT_CERT_KEY,
