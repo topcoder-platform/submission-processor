@@ -6,20 +6,18 @@ global.Promise = require('bluebird')
 const config = require('config')
 const logger = require('./common/logger')
 const Kafka = require('no-kafka')
-const co = require('co')
 const ProcessorService = require('./services/ProcessorService')
 const healthcheck = require('topcoder-healthcheck-dropin')
-const _ = require('lodash')
 
 // create consumer
-const options = { connectionString: config.KAFKA_URL }
+const options = { connectionString: config.KAFKA_URL, groupId: config.KAFKA_GROUP_ID }
 if (config.KAFKA_CLIENT_CERT && config.KAFKA_CLIENT_CERT_KEY) {
   options.ssl = { cert: config.KAFKA_CLIENT_CERT, key: config.KAFKA_CLIENT_CERT_KEY }
 }
-const consumer = new Kafka.SimpleConsumer(options)
+const consumer = new Kafka.GroupConsumer(options)
 
 // data handler
-const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (m) => {
+const dataHandler = async (messageSet, topic, partition) => Promise.each(messageSet, async (m) => {
   const message = m.message.value.toString('utf8')
   logger.info(`Handle Kafka event message; Topic: ${topic}; Partition: ${partition}; Offset: ${
     m.offset}; Message: ${message}.`)
@@ -47,21 +45,23 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
     return
   }
 
-  return co(function * () {
+  try {
     switch (topic) {
       case config.SUBMISSION_CREATE_TOPIC:
-        yield ProcessorService.processCreate(messageJSON)
+        await ProcessorService.processCreate(messageJSON)
         break
       case config.AVSCAN_TOPIC:
-        yield ProcessorService.processScan(messageJSON)
+        await ProcessorService.processScan(messageJSON)
         break
       default:
         throw new Error(`Invalid topic: ${topic}`)
     }
-  })
+
     // commit offset
-    .then(() => consumer.commitOffset({ topic, partition, offset: m.offset }))
-    .catch((err) => logger.error(err))
+    await consumer.commitOffset({ topic, partition, offset: m.offset })
+  } catch (err) {
+    logger.error(err)
+  }
 })
 
 // check if there is kafka connection alive
@@ -77,12 +77,14 @@ function check () {
   return connected
 }
 
+const topics = [config.SUBMISSION_CREATE_TOPIC, config.AVSCAN_TOPIC]
+// consume configured topics
 consumer
-  .init()
-  // consume configured topic
+  .init([{
+    subscriptions: topics,
+    handler: dataHandler
+  }])
   .then(() => {
     healthcheck.init([check])
-    const topics = [config.SUBMISSION_CREATE_TOPIC, config.AVSCAN_TOPIC]
-    _.each(topics, (tp) => consumer.subscribe(tp, { time: Kafka.LATEST_OFFSET }, dataHandler))
   })
   .catch((err) => logger.error(err))
