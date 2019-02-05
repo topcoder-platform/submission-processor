@@ -47,11 +47,13 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
     return
   }
 
+
   if (topic === config.SUBMISSION_CREATE_TOPIC && messageJSON.payload.fileType === 'url') {
     logger.debug(`Ignoring message in topic ${messageJSON.topic} with file type as url`)
     // ignore the message
     return
   }
+
 
   return co(function * () {
     switch (topic) {
