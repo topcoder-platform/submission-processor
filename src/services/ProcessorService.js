@@ -14,7 +14,7 @@ const AWS = require('aws-sdk')
 AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
 const s3p = bluebird.promisifyAll(s3)
-const AV_SCAN = 'AV Scan'
+const AV_SCAN = 'Virus Scan'
 const REVIEW_SCORECARDID = '30001850' // CWD-- TODO: make config or dynamicaly driven
 
 /**
