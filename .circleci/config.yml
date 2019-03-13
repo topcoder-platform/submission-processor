@@ -18,14 +18,6 @@ install_deploysuite: &install_deploysuite
             cp ./../buildscript/buildenv.sh .
             cp ./../buildscript/awsconfiguration.sh .
 
-restore_cache_settings_for_build: &restore_cache_settings_for_build
-  key: docker-node-modules-lsp-{{ checksum "package-lock.json" }}
-
-save_cache_settings: &save_cache_settings
-  key: docker-node-modules-lsp-{{ checksum "package-lock.json" }}
-  paths:
-    - node_modules
-
 jobs:
   # Build & Deploy against development backend
   "build-dev":
@@ -35,26 +27,15 @@ jobs:
       - setup_remote_docker
       - run: *install_dependency
       - run: *install_deploysuite
-      - restore_cache: *restore_cache_settings_for_build
-      - run:
-          name: "configuring environment"
-          command: |
-            ./awsconfiguration.sh DEV
-            ./buildenv.sh -e DEV -b dev-submission-processor-buildvar
-      - run:
-          name: "Building software"
-          command: |
-            source buildenvvar
-            ./build.sh DEV
-      - save_cache: *save_cache_settings
+      - run: ./build.sh
       - deploy:
           name: Running MasterScript.
           command: |
+            ./awsconfiguration.sh DEV
             source awsenvconf
             ./buildenv.sh -e DEV -b dev-submission-processor-deployvar
             source buildenvvar
-            ./master_deploy.sh -d ECS -e DEV -t latest -s org_global_app_var,dev-submission-processor-appvar -i lsp-app
-            #add deploy master script here
+            ./master_deploy.sh -d ECS -e DEV -t latest -s dev-global-appvar,dev-submission-processor-appvar -i submission-processor
 
   # Build & Deploy against production backend
   "build-prod":
@@ -63,17 +44,16 @@ jobs:
       - checkout
       - setup_remote_docker
       - run: *install_dependency
-      - restore_cache: *restore_cache_settings_for_build
-      - restore_cache: *restore_cache_settings_for_build
-      - run: ./build.sh PROD
-      - save_cache: *save_cache_settings
+      - run: *install_deploysuite
+      - run: ./build.sh
       - deploy:
           name: Running MasterScript.
           command: |
-            git clone --branch v1.1 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
-            cp ./../buildscript/master_deploy.sh .
-            ./master_deploy.sh -d ECS -e PROD -t $CIRCLE_SHA1 -s submission-processor
-            #add deploy master script here
+            ./awsconfiguration.sh PROD
+            source awsenvconf
+            ./buildenv.sh -e PROD -b prod-submission-processor-deployvar
+            source buildenvvar
+            ./master_deploy.sh -d ECS -e PROD -t latest -s prod-global-appvar,prod-submission-processor-appvar -i submission-processor
 
 workflows:
   version: 2
@@ -81,12 +61,14 @@ workflows:
     jobs:
       # Development builds are executed on "develop" branch only.
       - "build-dev":
+          context : org-global
           filters:
             branches:
               only:
                 - dev-circleci
                 - develop
       - "build-prod":
+          context : org-global
           filters:
             branches:
               only:
