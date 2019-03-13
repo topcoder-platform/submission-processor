@@ -65,7 +65,7 @@ workflows:
           filters:
             branches:
               only:
-                - dev-circleci
+                - feature/auth0-proxy-server-ms13
                 - develop
       - "build-prod":
           context : org-global
