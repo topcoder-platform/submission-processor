@@ -5,8 +5,9 @@ defaults: &defaults
 install_dependency: &install_dependency
           name: Installation of build and deployment dependencies.
           command: |
-            apk add --no-cache bash
-            apk add --no-cache jq py-pip sudo
+            apk update
+            apk add --no-cache bash curl jq py-pip sudo
+            apk upgrade
             sudo pip install awscli --upgrade
             sudo pip install docker-compose
 
