@@ -7,3 +7,5 @@ test-build.sh
 coverage/
 .nyc_output/
 api.env
+*-submission-processor-*.json
+*-global-appvar.json
