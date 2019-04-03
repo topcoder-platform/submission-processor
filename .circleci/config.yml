@@ -1,13 +1,11 @@
 version: 2
 defaults: &defaults
     docker:
-      - image: docker:18.06-git        
+      - image: circleci/python:2.7-stretch-browsers        
 install_dependency: &install_dependency
           name: Installation of build and deployment dependencies.
           command: |
-            apk update
-            apk add --no-cache bash curl jq py-pip sudo
-            apk upgrade
+            sudo apt install jq
             sudo pip install awscli --upgrade
             sudo pip install docker-compose
 
