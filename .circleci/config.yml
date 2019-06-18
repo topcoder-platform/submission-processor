@@ -7,6 +7,7 @@ install_dependency: &install_dependency
           command: |
             sudo apt install jq
             sudo pip install awscli --upgrade
+            sudo apt install python-dev libffi-dev gcc libc-dev make
             sudo pip install docker-compose
 
 install_deploysuite: &install_deploysuite
