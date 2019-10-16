@@ -20,6 +20,7 @@ The following parameters can be set in config files or in env variables:
 - KAFKA_CLIENT_CERT_KEY: Kafka connection private key, optional;
     if not provided, then SSL connection is not used, direct insecure connection is used;
     if provided, it can be either path to private key file or private key content
+- KAFKA_GROUP_ID: the Kafka group id, default value is 'submission-processor'
 - SUBMISSION_CREATE_TOPIC: Kafka topic related to Submission creation, default value is 'submission.notification.create'
 - AVSCAN_TOPIC: Kafka topic related to AV Scan, default value is 'avscan.action.scan'
 - ACCESS_KEY_ID: the AWS access key id
