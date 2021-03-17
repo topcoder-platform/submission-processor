@@ -162,3 +162,4 @@ npm run cov-e2e
 - go to AWS console S3 service, check the 3 buckets contents
 - check the mock submission api console, it should say Mock Submission API got some data
 
+Token Commit.
