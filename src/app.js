@@ -29,27 +29,36 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
   } catch (e) {
     logger.error('Invalid message JSON.')
     logger.error(e)
+
     // ignore the message
-    return
+    return co(function * () {
+      yield consumer.commitOffset({ topic, partition, offset: m.offset })
+    })
   }
 
   if (messageJSON.topic !== topic) {
     logger.error(`The message topic ${messageJSON.topic} doesn't match the Kafka topic ${topic}.`)
     // ignore the message
-    return
+    return co(function * () {
+      yield consumer.commitOffset({ topic, partition, offset: m.offset })
+    })
   }
 
   // Process only messages with scanned status
   if (messageJSON.topic === config.AVSCAN_TOPIC && messageJSON.payload.status !== 'scanned') {
     logger.debug(`Ignoring message in topic ${messageJSON.topic} with status ${messageJSON.payload.status}`)
     // ignore the message
-    return
+    return co(function * () {
+      yield consumer.commitOffset({ topic, partition, offset: m.offset })
+    })
   }
 
   if (topic === config.SUBMISSION_CREATE_TOPIC && messageJSON.payload.fileType === 'url') {
     logger.debug(`Ignoring message in topic ${messageJSON.topic} with file type as url`)
     // ignore the message
-    return
+    return co(function * () {
+      yield consumer.commitOffset({ topic, partition, offset: m.offset })
+    })
   }
 
   return co(function * () {
@@ -66,11 +75,15 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
   })
   // commit offset regardless of errors
     .then(() => {
-      consumer.commitOffset({ topic, partition, offset: m.offset })
+      return co(function * () {
+        yield consumer.commitOffset({ topic, partition, offset: m.offset })
+      })
     })
     .catch((err) => {
       logger.error(err)
-      consumer.commitOffset({ topic, partition, offset: m.offset })
+      return co(function * () {
+        yield consumer.commitOffset({ topic, partition, offset: m.offset })
+      })
     })
 })
 
