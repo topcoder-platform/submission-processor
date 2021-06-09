@@ -10,6 +10,7 @@ const uuid = require('uuid/v4')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
 const AWS = require('aws-sdk')
+const _ = require('lodash')
 
 AWS.config.region = config.get('aws.REGION')
 const s3 = new AWS.S3()
@@ -79,7 +80,7 @@ processCreate.schema = {
  */
 function * processScan (message) {
   let destinationBucket = config.get('aws.CLEAN_BUCKET')
-  const fileName = message.payload.fileName
+  const { fileName, submissionId } = message.payload
   if (!message.payload.isInfected) {
     logger.info(`The file ${fileName} is clean. Moving file to clean submission area.`)
   } else {
@@ -87,18 +88,23 @@ function * processScan (message) {
     destinationBucket = config.get('aws.QUARANTINE_BUCKET')
   }
 
-  yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, destinationBucket, fileName)
-  const movedS3Obj = `https://s3.amazonaws.com/${destinationBucket}/${fileName}`
+  const submissionAPIResponse = yield helper.reqToSubmissionAPI(
+    'GET', `${config.SUBMISSION_API_URL}/submissions/${submissionId}`
+  )
+  const { challengeId, memberId } = _.get(submissionAPIResponse, 'data', {})
+  const destinationKey = `${challengeId}/${memberId}/${submissionId}/${fileName}`
+  yield helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, destinationBucket, destinationKey)
+  const movedS3Obj = `https://s3.amazonaws.com/${destinationBucket}/${destinationKey}`
   logger.debug(`moved file: ${JSON.stringify(movedS3Obj)}`)
   logger.info('Update Submission final location using Submission API')
-  yield helper.reqToSubmissionAPI('PATCH', `${config.SUBMISSION_API_URL}/submissions/${message.payload.submissionId}`,
+  yield helper.reqToSubmissionAPI('PATCH', `${config.SUBMISSION_API_URL}/submissions/${submissionId}`,
     { url: movedS3Obj })
 
   logger.info('Create review using Submission API')
   yield helper.reqToSubmissionAPI('POST', `${config.SUBMISSION_API_URL}/reviews`, {
     score: message.payload.isInfected ? 0 : 100,
     reviewerId: uuid(), //  CWD-- TODO: should fix this to a specific Id
-    submissionId: message.payload.submissionId,
+    submissionId,
     scoreCardId: REVIEW_SCORECARDID,
     typeId: yield helper.getreviewTypeId(AV_SCAN)
   })

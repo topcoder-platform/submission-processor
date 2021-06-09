@@ -25,6 +25,16 @@ app.patch('/api/v5/submissions/:submissionId', (req, res) => {
   res.status(200).end()
 })
 
+app.get('/api/v5/submissions/:submissionId', (req, res) => {
+  logger.info('Mock Submission API got data:')
+  const response = {
+    challengeId: 'sampleChallengeId',
+    memberId: 'sampleMemberId'
+  }
+  logger.info(JSON.stringify(response, null, 4))
+  res.json(response).end()
+})
+
 app.use((req, res) => {
   res.status(404).json({ error: 'route not found' })
 })
