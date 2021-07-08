@@ -9,14 +9,13 @@ const Kafka = require('no-kafka')
 const co = require('co')
 const ProcessorService = require('./services/ProcessorService')
 const healthcheck = require('topcoder-healthcheck-dropin')
-const _ = require('lodash')
 
 // create consumer
-const options = { connectionString: config.KAFKA_URL }
+const options = { connectionString: config.KAFKA_URL, groupId: config.KAFKA_GROUP_ID }
 if (config.KAFKA_CLIENT_CERT && config.KAFKA_CLIENT_CERT_KEY) {
   options.ssl = { cert: config.KAFKA_CLIENT_CERT, key: config.KAFKA_CLIENT_CERT_KEY }
 }
-const consumer = new Kafka.SimpleConsumer(options)
+const consumer = new Kafka.GroupConsumer(options)
 
 // data handler
 const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (m) => {
@@ -30,30 +29,37 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
   } catch (e) {
     logger.error('Invalid message JSON.')
     logger.error(e)
+
     // ignore the message
-    return
+    return co(function * () {
+      yield consumer.commitOffset({ topic, partition, offset: m.offset })
+    })
   }
 
   if (messageJSON.topic !== topic) {
     logger.error(`The message topic ${messageJSON.topic} doesn't match the Kafka topic ${topic}.`)
     // ignore the message
-    return
+    return co(function * () {
+      yield consumer.commitOffset({ topic, partition, offset: m.offset })
+    })
   }
 
   // Process only messages with scanned status
   if (messageJSON.topic === config.AVSCAN_TOPIC && messageJSON.payload.status !== 'scanned') {
     logger.debug(`Ignoring message in topic ${messageJSON.topic} with status ${messageJSON.payload.status}`)
     // ignore the message
-    return
+    return co(function * () {
+      yield consumer.commitOffset({ topic, partition, offset: m.offset })
+    })
   }
-
 
   if (topic === config.SUBMISSION_CREATE_TOPIC && messageJSON.payload.fileType === 'url') {
     logger.debug(`Ignoring message in topic ${messageJSON.topic} with file type as url`)
     // ignore the message
-    return
+    return co(function * () {
+      yield consumer.commitOffset({ topic, partition, offset: m.offset })
+    })
   }
-
 
   return co(function * () {
     switch (topic) {
@@ -67,9 +73,18 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, (
         throw new Error(`Invalid topic: ${topic}`)
     }
   })
-    // commit offset
-    .then(() => consumer.commitOffset({ topic, partition, offset: m.offset }))
-    .catch((err) => logger.error(err))
+  // commit offset regardless of errors
+    .then(() => {
+      return co(function * () {
+        yield consumer.commitOffset({ topic, partition, offset: m.offset })
+      })
+    })
+    .catch((err) => {
+      logger.error(err)
+      return co(function * () {
+        yield consumer.commitOffset({ topic, partition, offset: m.offset })
+      })
+    })
 })
 
 // check if there is kafka connection alive
@@ -85,12 +100,18 @@ function check () {
   return connected
 }
 
+const topics = [config.SUBMISSION_CREATE_TOPIC, config.AVSCAN_TOPIC]
+
 consumer
-  .init()
-  // consume configured topic
+  .init([{
+    subscriptions: topics,
+    handler: dataHandler
+  }])
+  // consume configured topics
   .then(() => {
+    logger.info('Initialized.......')
     healthcheck.init([check])
-    const topics = [config.SUBMISSION_CREATE_TOPIC, config.AVSCAN_TOPIC]
-    _.each(topics, (tp) => consumer.subscribe(tp, { time: Kafka.LATEST_OFFSET }, dataHandler))
+    logger.info('Adding topics successfully.......')
+    logger.info(topics)
+    logger.info('Kick Start.......')
   })
-  .catch((err) => logger.error(err))
