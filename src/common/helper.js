@@ -4,15 +4,13 @@
 
 const _ = require('lodash')
 const axios = require('axios')
-const bluebird = require('bluebird')
 const config = require('config')
 const logger = require('./logger')
-const AWS = require('aws-sdk')
+const { S3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
 const AmazonS3URI = require('amazon-s3-uri')
 
-AWS.config.region = config.get('aws.REGION')
-const s3 = new AWS.S3()
-const s3p = bluebird.promisifyAll(s3)
+const s3 = new S3Client({ region: config.get('aws.REGION') })
+
 const m2mAuth = require('tc-core-library-js').auth.m2m
 const m2m = m2mAuth(_.pick(config, ['AUTH0_URL', 'AUTH0_AUDIENCE', 'TOKEN_CACHE_TIME', 'AUTH0_PROXY_SERVER_URL']))
 
@@ -22,8 +20,8 @@ const reviewTypes = {}
 /* Function to get M2M token
  * @returns {Promise}
  */
-function * getM2Mtoken () {
-  return yield m2m.getMachineToken(config.AUTH0_CLIENT_ID, config.AUTH0_CLIENT_SECRET)
+async function getM2Mtoken () {
+  return await m2m.getMachineToken(config.AUTH0_CLIENT_ID, config.AUTH0_CLIENT_SECRET)
 }
 
 /**
@@ -33,15 +31,15 @@ function * getM2Mtoken () {
  * @param{Object} reqBody Body of the request
  * @returns {Promise}
  */
-function * reqToSubmissionAPI (reqType, path, reqBody) {
+async function reqToSubmissionAPI (reqType, path, reqBody) {
   // Token necessary to send request to Submission API
-  const token = yield getM2Mtoken()
+  const token = await getM2Mtoken()
   if (reqType === 'POST') {
-    yield axios.post(path, reqBody, { headers: { 'Authorization': `Bearer ${token}` } })
+    await axios.post(path, reqBody, { headers: { Authorization: `Bearer ${token}` } })
   } else if (reqType === 'PATCH') {
-    yield axios.patch(path, reqBody, { headers: { 'Authorization': `Bearer ${token}` } })
+    await axios.patch(path, reqBody, { headers: { Authorization: `Bearer ${token}` } })
   } else if (reqType === 'GET') {
-    return yield axios.get(path, { headers: { 'Authorization': `Bearer ${token}` } })
+    return await axios.get(path, { headers: { Authorization: `Bearer ${token}` } })
   }
 }
 
@@ -50,11 +48,11 @@ function * reqToSubmissionAPI (reqType, path, reqBody) {
  * @param{String} reviewTypeName Name of the reviewType
  * @returns{String} reviewTypeId
  */
-function * getreviewTypeId (reviewTypeName) {
+async function getreviewTypeId (reviewTypeName) {
   if (reviewTypes[reviewTypeName]) {
     return reviewTypes[reviewTypeName]
   } else {
-    const response = yield reqToSubmissionAPI('GET',
+    const response = await reqToSubmissionAPI('GET',
       `${config.SUBMISSION_API_URL}/reviewTypes?name=${reviewTypeName}`, {})
     if (response.data.length !== 0) {
       reviewTypes[reviewTypeName] = response.data[0].id
@@ -69,16 +67,16 @@ function * getreviewTypeId (reviewTypeName) {
  * @param{String} fileURL URL of the file to be downloaded
  * @returns {Buffer} Buffer of downloaded file
  */
-function * downloadFile (fileURL) {
+async function downloadFile (fileURL) {
   let downloadedFile
   if (/.*amazonaws.*/.test(fileURL)) {
     const { bucket, key } = AmazonS3URI(fileURL)
     logger.info(`downloadFile(): file is on S3 ${bucket} / ${key}`)
-    downloadedFile = yield s3p.getObjectAsync({ Bucket: bucket, Key: key })
+    downloadedFile = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
     return downloadedFile.Body
   } else {
     logger.info(`downloadFile(): file is (hopefully) a public URL at ${fileURL}`)
-    downloadedFile = yield axios.get(fileURL, { responseType: 'arraybuffer' })
+    downloadedFile = await axios.get(fileURL, { responseType: 'arraybuffer' })
     return downloadedFile.data
   }
 }
@@ -90,9 +88,9 @@ function * downloadFile (fileURL) {
  * @param {String} targetBucket the target bucket
  * @param {String} targetKey the target key
  */
-function * moveFile (sourceBucket, sourceKey, targetBucket, targetKey) {
-  yield s3p.copyObjectAsync({ Bucket: targetBucket, CopySource: `/${sourceBucket}/${sourceKey}`, Key: targetKey })
-  yield s3p.deleteObjectAsync({ Bucket: sourceBucket, Key: sourceKey })
+async function moveFile (sourceBucket, sourceKey, targetBucket, targetKey) {
+  await s3.send(new CopyObjectCommand({ Bucket: targetBucket, CopySource: `/${sourceBucket}/${sourceKey}`, Key: targetKey }))
+  await s3.send(new DeleteObjectCommand({ Bucket: sourceBucket, Key: sourceKey }))
 }
 
 module.exports = {

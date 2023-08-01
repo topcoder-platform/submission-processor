@@ -3,14 +3,11 @@
  */
 
 const _ = require('lodash')
-const bluebird = require('bluebird')
 const config = require('config')
 const expect = require('chai').expect
-const AWS = require('aws-sdk')
+const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3')
 
-AWS.config.region = config.get('aws.REGION')
-const s3 = new AWS.S3()
-const s3p = bluebird.promisifyAll(s3)
+const s3 = new S3Client({ region: config.get('aws.REGION') })
 
 /**
  * Ensures the target object match all fields/values of the expected object.
@@ -28,7 +25,7 @@ function expectObject (target, expected) {
  * @param {Integer} ms Sleep time in Milliseconds
  * @returns {Promise}
  */
-function * sleep (ms) {
+function sleep (ms) {
   return new Promise(resolve => {
     setTimeout(resolve, ms)
   })
@@ -39,13 +36,9 @@ function * sleep (ms) {
  * @param{String} bucket Bucket name
  * @param{String} fileName File name to be used as key
  */
-function * checkFileExistence (bucket, fileName) {
-  try {
-    const file = yield s3p.headObjectAsync({ Bucket: bucket, Key: fileName })
-    expect(file).to.be.not.equal(null)
-  } catch (e) {
-    throw e
-  }
+async function checkFileExistence (bucket, fileName) {
+  const file = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: fileName }))
+  expect(file).to.be.not.equal(null)
 }
 
 module.exports = {
