@@ -8,7 +8,7 @@ const axios = require('axios')
 const { v4: uuid } = require('uuid')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
-const { S3Client, GetObjectCommand, UploadPartCommand } = require('@aws-sdk/client-s3')
+const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3')
 
 const s3 = new S3Client({ region: config.get('aws.REGION') })
 
@@ -39,7 +39,7 @@ async function processCreate (message) {
     // the file is not in DMZ area, then copy it to DMZ area
     logger.info(`The file ${fileName} is not in DMZ area, copying it to DMZ area.`)
     const downloadedFile = await helper.downloadFile(message.payload.url)
-    await s3.send(new UploadPartCommand({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName, Body: downloadedFile }))
+    await s3.send(new PutObjectCommand({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName, Body: downloadedFile }))
   }
 
   const dmzFileURL = `https://s3.amazonaws.com/${config.get('aws.DMZ_BUCKET')}/${fileName}`
