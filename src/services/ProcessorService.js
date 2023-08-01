@@ -32,7 +32,7 @@ async function processCreate (message) {
     // the file is already in DMZ area
     logger.info(`The file ${fileName} is already in DMZ area.`)
   } catch (e) {
-    if (e.statusCode !== 404) {
+    if (e.Code !== 'NoSuchKey') {
       // unexpected error, rethrow it
       throw e
     }
