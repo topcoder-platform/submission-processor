@@ -8,7 +8,7 @@ docker create --name app submission-processor:latest
 if [ -d node_modules ]
 then
   mv yarn.lock old-yarn.lock
-  docker cp app:/$APP_NAME/yarn.lock yarn.lock
+  docker cp app:/submission-processor/yarn.lock yarn.lock
   set +eo pipefail
   UPDATE_CACHE=$(cmp yarn.lock old-yarn.lock)
   set -eo pipefail
@@ -18,5 +18,5 @@ fi
 
 if [ "$UPDATE_CACHE" == 1 ]
 then
-  docker cp app:/$APP_NAME/node_modules .
+  docker cp app:/submission-processor/node_modules .
 fi
