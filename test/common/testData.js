@@ -2,7 +2,7 @@
  * Test data to be used in tests
  */
 
-const uuid = require('uuid/v4')
+const { v4: uuid } = require('uuid')
 
 const goodSubmission = {
   topic: 'submission.notification.create',
