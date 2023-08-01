@@ -11,16 +11,18 @@ const healthcheck = require('topcoder-healthcheck-dropin')
 
 // create consumer
 const options = {
-  connectionString: config.KAFKA_URL,
-  groupId: config.KAFKA_GROUP_ID
+  connectionString: config.KAFKA_URL
 }
+
 if (config.KAFKA_CLIENT_CERT && config.KAFKA_CLIENT_CERT_KEY) {
   options.ssl = {
     cert: config.KAFKA_CLIENT_CERT,
     key: config.KAFKA_CLIENT_CERT_KEY
   }
 }
-const consumer = new Kafka.GroupConsumer(options)
+
+const consumer = new Kafka.GroupConsumer({ ...options, groupId: config.KAFKA_GROUP_ID })
+const producer = new Kafka.Producer(options)
 
 // data handler
 const dataHandler = async (messageSet, topic, partition) => {
@@ -80,15 +82,25 @@ const dataHandler = async (messageSet, topic, partition) => {
     }
 
     try {
-      switch (topic) {
-        case config.SUBMISSION_CREATE_TOPIC:
-          await ProcessorService.processCreate(messageJSON)
-          break
-        case config.AVSCAN_TOPIC:
-          await ProcessorService.processScan(messageJSON)
-          break
-        default:
-          throw new Error(`Invalid topic: ${topic}`)
+      if (topic === config.SUBMISSION_CREATE_TOPIC) {
+        const payload = await ProcessorService.processCreate(messageJSON)
+        logger.info(`Sending request to scan the file ${payload.fileName}.`)
+        await producer.send({
+          topic: config.AVSCAN_TOPIC,
+          message: {
+            value: JSON.stringify({
+              topic: config.AVSCAN_TOPIC,
+              originator: 'submission-processor',
+              timestamp: new Date().toISOString(),
+              'mime-type': 'application/json',
+              payload
+            })
+          }
+        })
+      } else if (topic === config.AVSCAN_TOPIC) {
+        await ProcessorService.processScan(messageJSON)
+      } else {
+        throw new Error(`Invalid topic: ${topic}`)
       }
     } catch (err) {
       logger.logFullError(err)
@@ -118,16 +130,17 @@ function check () {
 
 const topics = [config.SUBMISSION_CREATE_TOPIC, config.AVSCAN_TOPIC]
 
-consumer
-  .init([
-    {
-      subscriptions: topics,
-      handler: dataHandler
-    }
-  ])
-  // consume configured topics
+producer.init()
   .then(() => {
-    logger.info('Initialized.......')
+    logger.debug('Producer initialized successfully')
+    return consumer
+      .init([{
+        subscriptions: topics,
+        handler: dataHandler
+      }])
+  })
+  .then(() => {
+    logger.debug('Consumer initialized successfully')
     healthcheck.init([check])
     logger.info('Adding topics successfully.......')
     logger.info(topics)

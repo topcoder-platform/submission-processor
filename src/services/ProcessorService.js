@@ -4,7 +4,6 @@
 
 const config = require('config')
 const Joi = require('joi')
-const axios = require('axios')
 const { v4: uuid } = require('uuid')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
@@ -43,14 +42,13 @@ async function processCreate (message) {
   }
 
   const dmzFileURL = `https://s3.amazonaws.com/${config.get('aws.DMZ_BUCKET')}/${fileName}`
-  // Send request to Scan the file
-  logger.info(`Sending request to scan the file ${fileName}.`)
-  const reqBody = {
+
+  return {
     submissionId: message.payload.id,
     url: dmzFileURL,
-    fileName
+    fileName,
+    status: 'unscanned'
   }
-  await axios.post(config.ANTIVIRUS_API_URL, reqBody, { maxContentLength: config.MAXFILESIZE })
 }
 
 processCreate.schema = Joi.object({

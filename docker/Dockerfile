@@ -1,6 +1,5 @@
-# Use the base image with Node.js 18.16.1-alpine3.18
-FROM node:18.16.1-alpine3.18
-
+# Use the base image with Node.js 18.16.1
+FROM node:18.16.1
 # Copy the current directory into the Docker image
 COPY . /submission-processor
 # Set working directory for future use
