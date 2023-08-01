@@ -20,7 +20,7 @@ const REVIEW_SCORECARDID = '30001850' // CWD-- TODO: make config or dynamicaly d
  */
 async function processCreate (message) {
   if (message.payload.resource !== 'submission') {
-    logger.info(`ignoring messages of resource type: ${message.resource}`)
+    logger.info(`ignoring messages of resource type: ${message.payload.resource}`)
     return false
   }
 

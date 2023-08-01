@@ -84,19 +84,21 @@ const dataHandler = async (messageSet, topic, partition) => {
     try {
       if (topic === config.SUBMISSION_CREATE_TOPIC) {
         const payload = await ProcessorService.processCreate(messageJSON)
-        logger.info(`Sending request to scan the file ${payload.fileName}.`)
-        await producer.send({
-          topic: config.AVSCAN_TOPIC,
-          message: {
-            value: JSON.stringify({
-              topic: config.AVSCAN_TOPIC,
-              originator: 'submission-processor',
-              timestamp: new Date().toISOString(),
-              'mime-type': 'application/json',
-              payload
-            })
-          }
-        })
+        if (payload) {
+          logger.info(`Sending request to scan the file ${payload.fileName}.`)
+          await producer.send({
+            topic: config.AVSCAN_TOPIC,
+            message: {
+              value: JSON.stringify({
+                topic: config.AVSCAN_TOPIC,
+                originator: 'submission-processor',
+                timestamp: new Date().toISOString(),
+                'mime-type': 'application/json',
+                payload
+              })
+            }
+          })
+        }
       } else if (topic === config.AVSCAN_TOPIC) {
         await ProcessorService.processScan(messageJSON)
       } else {
