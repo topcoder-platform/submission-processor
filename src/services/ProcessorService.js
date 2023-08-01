@@ -8,7 +8,7 @@ const axios = require('axios')
 const { v4: uuid } = require('uuid')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
-const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, HeadObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3')
 
 const s3 = new S3Client({ region: config.get('aws.REGION') })
 
@@ -28,11 +28,11 @@ async function processCreate (message) {
   // check whether the submission file is at DMZ area
   const fileName = message.payload.id + '.' + message.payload.fileType
   try {
-    await s3.send(new GetObjectCommand({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName }))
+    await s3.send(new HeadObjectCommand({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName }))
     // the file is already in DMZ area
     logger.info(`The file ${fileName} is already in DMZ area.`)
   } catch (e) {
-    if (e.Code !== 'NoSuchKey') {
+    if (e.name !== 'NotFound') {
       // unexpected error, rethrow it
       throw e
     }

@@ -1,5 +1,5 @@
-# Use the base image with Node.js 16.20.1-buster
-FROM node:16.20.1-buster
+# Use the base image with Node.js 18.16.1-alpine3.18
+FROM node:18.16.1-alpine3.18
 
 # Copy the current directory into the Docker image
 COPY . /submission-processor

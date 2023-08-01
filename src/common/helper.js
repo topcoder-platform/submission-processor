@@ -65,7 +65,7 @@ async function getreviewTypeId (reviewTypeName) {
 /**
  * Function to download file from given URL
  * @param{String} fileURL URL of the file to be downloaded
- * @returns {Buffer} Buffer of downloaded file
+ * @returns {Promise<Buffer>} Buffer of downloaded file
  */
 async function downloadFile (fileURL) {
   let downloadedFile
@@ -73,7 +73,7 @@ async function downloadFile (fileURL) {
     const { bucket, key } = AmazonS3URI(fileURL)
     logger.info(`downloadFile(): file is on S3 ${bucket} / ${key}`)
     downloadedFile = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
-    return downloadedFile.Body
+    return Buffer.concat(await downloadedFile.Body.toArray())
   } else {
     logger.info(`downloadFile(): file is (hopefully) a public URL at ${fileURL}`)
     downloadedFile = await axios.get(fileURL, { responseType: 'arraybuffer' })
