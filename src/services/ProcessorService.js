@@ -58,7 +58,7 @@ processCreate.schema = Joi.object({
     timestamp: Joi.date().required(),
     'mime-type': Joi.string().required(),
     payload: Joi.object().keys({
-      resource: Joi.string().valid('submission', 'review').required(),
+      resource: Joi.string().required(),
       id: Joi.string().required(),
       url: Joi.string().trim().uri(),
       fileType: Joi.string(),
