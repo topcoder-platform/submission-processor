@@ -1,4 +1,3 @@
-
 /**
  * The configuration file.
  */
@@ -24,7 +23,6 @@ module.exports = {
   },
 
   SUBMISSION_API_URL: process.env.SUBMISSION_API_URL || 'http://localhost:3010/api/v5',
-  ANTIVIRUS_API_URL: process.env.ANTIVIRUS_API_URL || 'http://localhost:3010/v5/batchScan',
 
   AUTH0_URL: process.env.AUTH0_URL, // Auth0 credentials for Submission Service
   AUTH0_AUDIENCE: process.env.AUTH0_AUDIENCE || 'https://www.topcoder.com',

@@ -8,7 +8,6 @@ process.env.NODE_ENV = 'test'
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 const expect = chai.expect
-const co = require('co')
 const config = require('config')
 const Kafka = require('no-kafka')
 const testHelper = require('../common/testHelper')
@@ -29,49 +28,46 @@ describe('TC Submission Processor Tests', () => {
     producer.init().then(() => done())
   })
 
-  it('Infected submission should get moved to quarantine area', (done) => {
-    co(function * () {
-      const result = yield producer.send({topic: infectedSubmission.topic,
-        message: {
-          value: JSON.stringify(infectedSubmission)
-        }})
-      const fileName = `${infectedSubmission.payload.id}.zip`
-      expect(result[0].error).to.be.equal(null)
-      yield testHelper.sleep(20000)
-      yield testHelper.checkFileExistence(config.get('aws.QUARANTINE_BUCKET'), fileName)
+  it('Infected submission should get moved to quarantine area', async (done) => {
+    const result = await producer.send({
+      topic: infectedSubmission.topic,
+      message: {
+        value: JSON.stringify(infectedSubmission)
+      }
     })
-      .then(() => done())
-      .catch(done)
+    const fileName = `${infectedSubmission.payload.id}.zip`
+    expect(result[0].error).to.be.equal(null)
+    await testHelper.sleep(20000)
+    await testHelper.checkFileExistence(config.get('aws.QUARANTINE_BUCKET'), fileName)
+    done()
   }).timeout(30000)
 
-  it('Good submission should get moved to the clean area', (done) => {
-    co(function * () {
-      const result = yield producer.send({topic: goodSubmission.topic,
-        message: {
-          value: JSON.stringify(goodSubmission)
-        }})
-      const fileName = `${goodSubmission.payload.id}.zip`
-      expect(result[0].error).to.be.equal(null)
-      yield testHelper.sleep(20000)
-      yield testHelper.checkFileExistence(config.get('aws.CLEAN_BUCKET'), fileName)
+  it('Good submission should get moved to the clean area', async (done) => {
+    const result = await producer.send({
+      topic: goodSubmission.topic,
+      message: {
+        value: JSON.stringify(goodSubmission)
+      }
     })
-      .then(() => done())
-      .catch(done)
+    const fileName = `${goodSubmission.payload.id}.zip`
+    expect(result[0].error).to.be.equal(null)
+    await testHelper.sleep(20000)
+    await testHelper.checkFileExistence(config.get('aws.CLEAN_BUCKET'), fileName)
+    done()
   }).timeout(30000)
 
-  it('Good submission from S3 should get moved to the clean area', (done) => {
-    co(function * () {
-      const result = yield producer.send({topic: s3Submission.topic,
-        message: {
-          value: JSON.stringify(s3Submission)
-        }})
-      const fileName = `${s3Submission.payload.id}.zip`
-      expect(result[0].error).to.be.equal(null)
-      yield testHelper.sleep(20000)
-      yield testHelper.checkFileExistence(config.get('aws.CLEAN_BUCKET'), fileName)
+  it('Good submission from S3 should get moved to the clean area', async (done) => {
+    const result = await producer.send({
+      topic: s3Submission.topic,
+      message: {
+        value: JSON.stringify(s3Submission)
+      }
     })
-      .then(() => done())
-      .catch(done)
+    const fileName = `${s3Submission.payload.id}.zip`
+    expect(result[0].error).to.be.equal(null)
+    await testHelper.sleep(20000)
+    await testHelper.checkFileExistence(config.get('aws.CLEAN_BUCKET'), fileName)
+    done()
   }).timeout(30000)
 
   it('Health check URL should return the health status', (done) => {

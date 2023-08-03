@@ -5,8 +5,8 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "lint": "standard",
-    "lint:fix": "standard --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "mock-submission-api": "node mock-submission-api/api.js",
     "test": "mocha test/unit/*.test.js --require test/unit/prepare.js --exit",
     "e2e": "mocha test/e2e/*.test.js --exit",
@@ -15,40 +15,47 @@
   },
   "author": "TCSCODER",
   "devDependencies": {
+    "body-parser": "^1.20.2",
     "chai": "^4.1.2",
     "chai-http": "^4.0.0",
+    "cors": "^2.8.5",
+    "eslint": "^8.0.1",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^15.0.0 || ^16.0.0 ",
+    "eslint-plugin-promise": "^6.0.0",
+    "express": "^4.18.2",
     "mocha": "^5.2.0",
     "mocha-prepare": "^0.1.0",
     "nock": "^9.6.1",
     "nyc": "^12.0.2",
-    "should": "^13.2.3",
-    "standard": "^11.0.1"
+    "should": "^13.2.3"
   },
   "dependencies": {
-    "amazon-s3-uri": "0.0.3",
-    "aws-sdk": "^2.300.0",
-    "axios": "^0.18.0",
-    "bluebird": "^3.5.1",
-    "body-parser": "^1.18.3",
-    "co": "^4.6.0",
-    "config": "^2.0.1",
-    "cors": "^2.8.4",
-    "express": "^4.16.3",
+    "@aws-sdk/client-s3": "^3.379.1",
+    "amazon-s3-uri": "^0.1.1",
+    "axios": "^1.4.0",
+    "bluebird": "^3.7.2",
+    "config": "^3.3.9",
     "get-parameter-names": "^0.3.0",
-    "joi": "^13.6.0",
-    "lodash": "^4.17.10",
+    "joi": "^17.9.2",
+    "lodash": "^4.17.21",
     "no-kafka": "^3.4.3",
     "tc-core-library-js": "appirio-tech/tc-core-library-js.git#v2.6",
     "topcoder-healthcheck-dropin": "^1.0.3",
-    "uuid": "^3.3.2",
-    "winston": "^2.2.0"
+    "uuid": "^9.0.0",
+    "winston": "^3.10.0"
   },
   "engines": {
-    "node": "8.x"
+    "node": "18.x"
   },
   "standard": {
     "env": [
       "mocha"
     ]
+  },
+  "volta": {
+    "node": "18.16.1",
+    "yarn": "1.22.19"
   }
 }

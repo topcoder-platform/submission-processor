@@ -30,7 +30,6 @@ The following parameters can be set in config files or in env variables:
 - CLEAN_BUCKET: the clean bucket
 - QUARANTINE_BUCKET: quarantine bucket
 - SUBMISSION_API_URL: Submission API URL
-- ANTIVIRUS_API_URL: Antivirus API URL
 
 Note that ACCESS_KEY_ID and SECRET_ACCESS_KEY are optional,
 if not provided, then they are loaded from shared credentials, see [official documentation](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html)
@@ -77,10 +76,6 @@ Also note that there is a `/health` endpoint that checks for the health of the a
 - start app `npm start`
 - use another terminal to start mock submission api `npm run mock-submission-api`
   the mock submission api is running at `http://localhost:3010/api/v5`
-
-- Anti virus API configured using `ANTIVIRUS_API_URL` should be up and running for the application to work properly.
-
-- You can run the Anti virus service locally using the [av-scannner-service](https://github.com/topcoder-platform/av-scanner-service)
 
 ## Local Deployment with Docker
 
