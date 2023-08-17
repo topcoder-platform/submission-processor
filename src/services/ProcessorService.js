@@ -47,7 +47,10 @@ async function processCreate (message) {
     submissionId: message.payload.id,
     url: dmzFileURL,
     fileName,
-    status: 'unscanned'
+    status: 'unscanned',
+    cleanDestinationBucket: config.get('aws.CLEAN_BUCKET'),
+    quarantineDestinationBucket: config.get('aws.QUARANTINE_BUCKET'),
+    callbackTopic: config.get('AVSCAN_TOPIC')
   }
 }
 
@@ -72,21 +75,9 @@ processCreate.schema = Joi.object({
  * @param {Object} message the message
  */
 async function processScan (message) {
-  let destinationBucket = config.get('aws.CLEAN_BUCKET')
-  const fileName = message.payload.fileName
-  if (!message.payload.isInfected) {
-    logger.info(`The file ${fileName} is clean. Moving file to clean submission area.`)
-  } else {
-    logger.info(`The file ${fileName} is infected. Moving file to quarantine area.`)
-    destinationBucket = config.get('aws.QUARANTINE_BUCKET')
-  }
-
-  await helper.moveFile(config.get('aws.DMZ_BUCKET'), fileName, destinationBucket, fileName)
-  const movedS3Obj = `https://s3.amazonaws.com/${destinationBucket}/${fileName}`
-  logger.debug(`moved file: ${JSON.stringify(movedS3Obj)}`)
   logger.info('Update Submission final location using Submission API')
   await helper.reqToSubmissionAPI('PATCH', `${config.SUBMISSION_API_URL}/submissions/${message.payload.submissionId}`,
-    { url: movedS3Obj })
+    { url: message.payload.url })
 
   logger.info('Create review using Submission API')
   await helper.reqToSubmissionAPI('POST', `${config.SUBMISSION_API_URL}/reviews`, {
