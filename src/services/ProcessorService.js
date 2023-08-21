@@ -47,10 +47,10 @@ async function processCreate (message) {
     submissionId: message.payload.id,
     url: dmzFileURL,
     fileName,
-    status: 'unscanned',
     cleanDestinationBucket: config.get('aws.CLEAN_BUCKET'),
     quarantineDestinationBucket: config.get('aws.QUARANTINE_BUCKET'),
-    callbackTopic: config.get('AVSCAN_TOPIC')
+    callbackOption: 'kafka',
+    callbackKafkaTopic: config.get('SUBMISSION_SCAN_TOPIC')
   }
 }
 
@@ -99,7 +99,6 @@ processScan.schema = Joi.object({
       submissionId: Joi.string().required(),
       url: Joi.string().required(),
       fileName: Joi.string().required(),
-      status: Joi.string().required(),
       isInfected: Joi.boolean().required()
     }).unknown(true).required()
   }).required()

@@ -54,20 +54,6 @@ const dataHandler = async (messageSet, topic, partition) => {
       return
     }
 
-    // Process only messages with scanned status
-    if (
-      messageJSON.topic === config.AVSCAN_TOPIC &&
-      messageJSON.payload.status !== 'scanned'
-    ) {
-      logger.debug(
-        `Ignoring message in topic ${messageJSON.topic} with status ${messageJSON.payload.status}`
-      )
-      // ignore the message
-
-      await consumer.commitOffset({ topic, partition, offset: m.offset })
-      return
-    }
-
     if (
       topic === config.SUBMISSION_CREATE_TOPIC &&
       messageJSON.payload.fileType === 'url'
@@ -99,7 +85,7 @@ const dataHandler = async (messageSet, topic, partition) => {
             }
           })
         }
-      } else if (topic === config.AVSCAN_TOPIC) {
+      } else if (topic === config.SUBMISSION_SCAN_TOPIC) {
         await ProcessorService.processScan(messageJSON)
       } else {
         throw new Error(`Invalid topic: ${topic}`)
@@ -130,7 +116,7 @@ function check () {
   return connected
 }
 
-const topics = [config.SUBMISSION_CREATE_TOPIC, config.AVSCAN_TOPIC]
+const topics = [config.SUBMISSION_CREATE_TOPIC, config.SUBMISSION_SCAN_TOPIC]
 
 producer.init()
   .then(() => {
