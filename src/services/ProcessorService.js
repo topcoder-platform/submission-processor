@@ -47,6 +47,7 @@ async function processCreate (message) {
     submissionId: message.payload.id,
     url: dmzFileURL,
     fileName,
+    moveFile: true,
     cleanDestinationBucket: config.get('aws.CLEAN_BUCKET'),
     quarantineDestinationBucket: config.get('aws.QUARANTINE_BUCKET'),
     callbackOption: 'kafka',
