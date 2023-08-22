@@ -6,7 +6,7 @@ const _ = require('lodash')
 const axios = require('axios')
 const config = require('config')
 const logger = require('./logger')
-const { S3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3')
 const AmazonS3URI = require('amazon-s3-uri')
 
 const s3 = new S3Client({ region: config.get('aws.REGION') })
