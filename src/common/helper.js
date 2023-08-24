@@ -6,7 +6,7 @@ const _ = require('lodash')
 const axios = require('axios')
 const config = require('config')
 const logger = require('./logger')
-const { S3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3')
 const AmazonS3URI = require('amazon-s3-uri')
 
 const s3 = new S3Client({ region: config.get('aws.REGION') })
@@ -81,21 +81,8 @@ async function downloadFile (fileURL) {
   }
 }
 
-/**
- * Move file from one AWS S3 bucket to another bucket.
- * @param {String} sourceBucket the source bucket
- * @param {String} sourceKey the source key
- * @param {String} targetBucket the target bucket
- * @param {String} targetKey the target key
- */
-async function moveFile (sourceBucket, sourceKey, targetBucket, targetKey) {
-  await s3.send(new CopyObjectCommand({ Bucket: targetBucket, CopySource: `/${sourceBucket}/${sourceKey}`, Key: targetKey }))
-  await s3.send(new DeleteObjectCommand({ Bucket: sourceBucket, Key: sourceKey }))
-}
-
 module.exports = {
   reqToSubmissionAPI,
   getreviewTypeId,
-  downloadFile,
-  moveFile
+  downloadFile
 }

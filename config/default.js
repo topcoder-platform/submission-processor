@@ -12,6 +12,7 @@ module.exports = {
   KAFKA_CLIENT_CERT: process.env.KAFKA_CLIENT_CERT,
   KAFKA_CLIENT_CERT_KEY: process.env.KAFKA_CLIENT_CERT_KEY,
   SUBMISSION_CREATE_TOPIC: process.env.SUBMISSION_CREATE_TOPIC || 'submission.notification.create',
+  SUBMISSION_SCAN_TOPIC: process.env.SUBMISSION_SCAN_TOPIC || 'submission.scan.complete',
   AVSCAN_TOPIC: process.env.AVSCAN_TOPIC || 'avscan.action.scan',
 
   // AWS related parameters
