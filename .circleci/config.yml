@@ -48,6 +48,26 @@ jobs:
             source buildenvvar
             ./master_deploy.sh -d ECS -e DEV -t latest -s dev-global-appvar,dev-submission-processor-appvar -i submission-processor
 
+  # Build & Deploy against development backend
+  "build-qa":
+    <<: *defaults
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: *install_dependency
+      - run: *install_deploysuite
+      - restore_cache: *restore_cache_settings_for_build
+      - run: ./build.sh
+      - save_cache: *save_cache_settings
+      - deploy:
+          name: Running MasterScript.
+          command: |
+            ./awsconfiguration.sh QA
+            source awsenvconf
+            ./buildenv.sh -e QA -b qa-submission-processor-deployvar
+            source buildenvvar
+            ./master_deploy.sh -d ECS -e DEV -t latest -s qa-global-appvar,qa-submission-processor-appvar -i submission-processor
+            
   # Build & Deploy against production backend
   "build-prod":
     <<: *defaults
@@ -79,6 +99,12 @@ workflows:
             branches:
               only:
                 - develop
+      - "build-qa":
+          context: org-global
+          filters:
+            branches:
+              only:
+                - qa                
       - "build-prod":
           context: org-global
           filters:
