@@ -7,7 +7,7 @@ const Joi = require('joi')
 const { v4: uuid } = require('uuid')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
-const { S3Client, HeadObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3')
 
 const s3 = new S3Client({ region: config.get('aws.REGION') })
 
@@ -19,33 +19,29 @@ const REVIEW_SCORECARDID = '30001850' // CWD-- TODO: make config or dynamicaly d
  * @param {Object} message the message
  */
 async function processCreate (message) {
-  if (message.payload.resource !== 'submission') {
-    logger.info(`ignoring messages of resource type: ${message.payload.resource}`)
-    return false
-  }
-
   // check whether the submission file is at DMZ area
-  const fileName = message.payload.id + '.' + message.payload.fileType
+  const url = message.payload.url
+  const { isValid, bucket, key: fileName } = helper.validateS3URI(url)
+  if (!isValid) {
+    logger.error(`${message.payload.url} is not a valid`)
+  }
   try {
-    await s3.send(new HeadObjectCommand({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName }))
-    // the file is already in DMZ area
-    logger.info(`The file ${fileName} is already in DMZ area.`)
+    await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: fileName }))
+    // the file is in DMZ area
+    logger.info(`The file ${fileName} is in DMZ area.`)
   } catch (e) {
     if (e.name !== 'NotFound') {
       // unexpected error, rethrow it
       throw e
     }
     // the file is not in DMZ area, then copy it to DMZ area
-    logger.info(`The file ${fileName} is not in DMZ area, copying it to DMZ area.`)
-    const downloadedFile = await helper.downloadFile(message.payload.url)
-    await s3.send(new PutObjectCommand({ Bucket: config.get('aws.DMZ_BUCKET'), Key: fileName, Body: downloadedFile }))
+    logger.error(`The file ${fileName} is not in DMZ area`)
+    return false
   }
-
-  const dmzFileURL = `https://s3.amazonaws.com/${config.get('aws.DMZ_BUCKET')}/${fileName}`
 
   return {
     submissionId: message.payload.id,
-    url: dmzFileURL,
+    url,
     fileName,
     moveFile: true,
     cleanDestinationBucket: config.get('aws.CLEAN_BUCKET'),
@@ -62,11 +58,8 @@ processCreate.schema = Joi.object({
     timestamp: Joi.date().required(),
     'mime-type': Joi.string().required(),
     payload: Joi.object().keys({
-      resource: Joi.string().required(),
       id: Joi.string().required(),
-      url: Joi.string().trim().uri(),
-      fileType: Joi.string(),
-      isFileSubmission: Joi.boolean()
+      url: Joi.string().trim().uri().required()
     }).unknown(true).required()
   }).required()
 }).required()
