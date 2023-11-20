@@ -35,7 +35,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.379.1",
     "amazon-s3-uri": "^0.1.1",
-    "axios": "^1.4.0",
+    "axios": "^1.6.0",
     "bluebird": "^3.7.2",
     "config": "^3.3.9",
     "get-parameter-names": "^0.3.0",
