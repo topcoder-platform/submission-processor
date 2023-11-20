@@ -8,6 +8,7 @@ const logger = require('./common/logger')
 const Kafka = require('no-kafka')
 const ProcessorService = require('./services/ProcessorService')
 const healthcheck = require('topcoder-healthcheck-dropin')
+const _ = require('lodash')
 
 // create consumer
 const options = {
@@ -56,13 +57,12 @@ const dataHandler = async (messageSet, topic, partition) => {
 
     if (
       topic === config.SUBMISSION_CREATE_TOPIC &&
-      messageJSON.payload.fileType === 'url'
+      (_.get(messageJSON, 'payload.resource') !== 'submission' ||
+        _.get(messageJSON, 'payload.fileType') === 'url')
     ) {
-      logger.debug(
-        `Ignoring message in topic ${messageJSON.topic} with file type as url`
+      console.log(
+        `Ignoring message in topic ${messageJSON.topic} as it's resource is not submission and file type is url`
       )
-      // ignore the message
-
       await consumer.commitOffset({ topic, partition, offset: m.offset })
       return
     }
@@ -84,6 +84,8 @@ const dataHandler = async (messageSet, topic, partition) => {
               })
             }
           })
+        } else {
+          logger.error('Cannot process event')
         }
       } else if (topic === config.SUBMISSION_SCAN_TOPIC) {
         await ProcessorService.processScan(messageJSON)
