@@ -73,7 +73,8 @@ const dataHandler = async (messageSet, topic, partition) => {
         if (payload) {
           logger.info(`Sending request to scan the file ${payload.fileName}.`)
           do {
-            let failed=false
+            let failedCount = 0
+            let failed = false
             const result = await producer.send({
               topic: config.AVSCAN_TOPIC,
               message: {
@@ -90,8 +91,13 @@ const dataHandler = async (messageSet, topic, partition) => {
             if(error) {
               logger.error('Raising message to scan the file failed:' + JSON.stringify(error))
               failed = true
+              failedCount++
             }
-          } while (failed)
+          } while (failed && failedCount <=3 )
+
+            if(failedCount > 3) {
+            throw new Error('Could not connect to Kafka to request AV scan of file.  Error: ' + JSON.stringify(error))
+          }
         } else {
           logger.error('Cannot process event')
         }
