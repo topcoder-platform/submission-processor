@@ -95,7 +95,7 @@ const dataHandler = async (messageSet, topic, partition) => {
             }
           } while (failed && failedCount <=3 )
 
-            if(failedCount > 3) {
+          if(failedCount > 3) {
             throw new Error('Could not connect to Kafka to request AV scan of file')
           }
         } else {
