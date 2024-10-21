@@ -72,18 +72,26 @@ const dataHandler = async (messageSet, topic, partition) => {
         const payload = await ProcessorService.processCreate(messageJSON)
         if (payload) {
           logger.info(`Sending request to scan the file ${payload.fileName}.`)
-          await producer.send({
-            topic: config.AVSCAN_TOPIC,
-            message: {
-              value: JSON.stringify({
-                topic: config.AVSCAN_TOPIC,
-                originator: 'submission-processor',
-                timestamp: new Date().toISOString(),
-                'mime-type': 'application/json',
-                payload
-              })
+          do {
+            let failed=false
+            const result = await producer.send({
+              topic: config.AVSCAN_TOPIC,
+              message: {
+                value: JSON.stringify({
+                  topic: config.AVSCAN_TOPIC,
+                  originator: 'submission-processor',
+                  timestamp: new Date().toISOString(),
+                  'mime-type': 'application/json',
+                  payload
+                })
+              }
+            })
+            const error = _.get(result, '[0].error')
+            if(error) {
+              logger.error('Raising message to scan the file failed:' + JSON.stringify(error))
+              failed = true
             }
-          })
+          } while (failed)
         } else {
           logger.error('Cannot process event')
         }
