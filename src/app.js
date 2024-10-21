@@ -89,7 +89,7 @@ const dataHandler = async (messageSet, topic, partition) => {
             })
             const error = _.get(result, '[0].error')
             if(error) {
-              logger.error('Raising message to scan the file failed:' + JSON.stringify(error))
+              logger.error(`Raising message to scan the file failed: ${JSON.stringify(error)}`)
               failed = true
               failedCount++
             }
