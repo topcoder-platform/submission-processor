@@ -2,14 +2,12 @@ version: 2
 defaults: &defaults
   docker:
     - image: cimg/python:3.11.7-browsers
-  install_dependency: &install_dependency
+install_dependency: &install_dependency
   name: Installation of build and deployment dependencies.
   command: |
     sudo apt update
     sudo apt install jq python3-pip
     sudo pip3 install awscli --upgrade
-    sudo apt install libffi-dev gcc libc-dev make
-
 install_deploysuite: &install_deploysuite
   name: Installation of install_deploysuite.
   command: |
@@ -17,14 +15,13 @@ install_deploysuite: &install_deploysuite
     cp ./../buildscript/master_deploy.sh .
     cp ./../buildscript/buildenv.sh .
     cp ./../buildscript/awsconfiguration.sh .
-
 restore_cache_settings_for_build: &restore_cache_settings_for_build
-  key: docker-node-modules-{{ checksum "yarn.lock" }}
+  key: docker-node-modules-{{ checksum "package-lock.json" }}
 
 save_cache_settings: &save_cache_settings
-  key: docker-node-modules-{{ checksum "yarn.lock" }}
+  key: docker-node-modules-{{ checksum "package-lock.json" }}
   paths:
-    - node_modules
+  - node_modules
 
 builddeploy_steps: &builddeploy_steps
 - checkout
