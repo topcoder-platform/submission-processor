@@ -1,16 +1,13 @@
 version: 2
 defaults: &defaults
   docker:
-    - image: cimg/python:3.11.0-browsers
+    - image: cimg/python:3.11.7-browsers
 install_dependency: &install_dependency
   name: Installation of build and deployment dependencies.
   command: |
     sudo apt update
     sudo apt install jq python3-pip
     sudo pip3 install awscli --upgrade
-    sudo pip3 install docker-compose          
-    sudo apt install libffi-dev gcc libc-dev make
-
 install_deploysuite: &install_deploysuite
   name: Installation of install_deploysuite.
   command: |
@@ -18,70 +15,69 @@ install_deploysuite: &install_deploysuite
     cp ./../buildscript/master_deploy.sh .
     cp ./../buildscript/buildenv.sh .
     cp ./../buildscript/awsconfiguration.sh .
-
 restore_cache_settings_for_build: &restore_cache_settings_for_build
-  key: docker-node-modules-{{ checksum "yarn.lock" }}
+  key: docker-node-modules-{{ checksum "package-lock.json" }}
 
 save_cache_settings: &save_cache_settings
-  key: docker-node-modules-{{ checksum "yarn.lock" }}
+  key: docker-node-modules-{{ checksum "package-lock.json" }}
   paths:
-    - node_modules
+  - node_modules
+
+builddeploy_steps: &builddeploy_steps
+- checkout
+- setup_remote_docker
+- run: *install_dependency
+- run: *install_deploysuite
+- restore_cache: *restore_cache_settings_for_build
+- run:
+    command: ./build.sh ${APPNAME}
+    no_output_timeout: 15m
+- save_cache: *save_cache_settings
+- deploy:
+    name: Running MasterScript.
+    command: |
+      ./awsconfiguration.sh $DEPLOY_ENV
+      source awsenvconf
+      ./buildenv.sh -e $DEPLOY_ENV -b ${LOGICAL_ENV}-${APPNAME}-deployvar
+      source buildenvvar
+      ./master_deploy.sh -d ECS -e $DEPLOY_ENV -t latest -s ${LOGICAL_ENV}-global-appvar,${LOGICAL_ENV}-${APPNAME}-appvar -i ${APPNAME}
 
 jobs:
   # Build & Deploy against development backend
   "build-dev":
-    <<: *defaults
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run: *install_dependency
-      - run: *install_deploysuite
-      - restore_cache: *restore_cache_settings_for_build
-      - run: ./build.sh
-      - save_cache: *save_cache_settings
-      - deploy:
-          name: Running MasterScript.
-          command: |
-            ./awsconfiguration.sh DEV
-            source awsenvconf
-            ./buildenv.sh -e DEV -b dev-submission-processor-deployvar
-            source buildenvvar
-            ./master_deploy.sh -d ECS -e DEV -t latest -s dev-global-appvar,dev-submission-processor-appvar -i submission-processor
+    !!merge <<: *defaults
+    environment:
+      DEPLOY_ENV: "DEV"
+      LOGICAL_ENV: "dev"
+      APPNAME: "submission-processor"
+    steps: *builddeploy_steps
+    resource_class: large
 
-  # Build & Deploy against production backend
   "build-prod":
-    <<: *defaults
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run: *install_dependency
-      - run: *install_deploysuite
-      - restore_cache: *restore_cache_settings_for_build
-      - run: ./build.sh
-      - save_cache: *save_cache_settings
-      - deploy:
-          name: Running MasterScript.
-          command: |
-            ./awsconfiguration.sh PROD
-            source awsenvconf
-            ./buildenv.sh -e PROD -b prod-submission-processor-deployvar
-            source buildenvvar
-            ./master_deploy.sh -d ECS -e PROD -t latest -s prod-global-appvar,prod-submission-processor-appvar -i submission-processor
+    !!merge <<: *defaults
+    environment:
+      DEPLOY_ENV: "PROD"
+      LOGICAL_ENV: "prod"
+      APPNAME: "submission-processor"
+    steps: *builddeploy_steps
+    resource_class: large
 
 workflows:
   version: 2
   build:
     jobs:
-      # Development builds are executed on "develop" branch only.
-      - "build-dev":
-          context: org-global
-          filters:
-            branches:
-              only:
-                - develop
-      - "build-prod":
-          context: org-global
-          filters:
-            branches:
-              only:
-                - master
+    # Development builds are executed on "develop" branch only.
+    - "build-dev":
+        context: org-global
+        filters:
+          branches:
+            only:
+            - develop
+
+    # Production builds are exectuted only on tagged commits to the
+    # master branch.
+    - "build-prod":
+        context: org-global
+        filters:
+          branches:
+            only: master
