@@ -72,9 +72,9 @@ const dataHandler = async (messageSet, topic, partition) => {
         const payload = await ProcessorService.processCreate(messageJSON)
         if (payload) {
           logger.info(`Sending request to scan the file ${payload.fileName}.`)
+          let failed = false
+          let failedCount = 0
           do {
-            let failedCount = 0
-            let failed = false
             const result = await producer.send({
               topic: config.AVSCAN_TOPIC,
               message: {
